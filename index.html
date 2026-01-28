@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nail Studio App</title>
+    <style>
+        :root {
+            --bg-color: #FDFBF7; /* Молочный */
+            --btn-book: #A0D2EB; /* Пастельно-голубой */
+            --btn-promo: #E5EAF5; /* Лавандовый */
+            --slot-free: #D0F0C0; /* Чайный зеленый */
+            --slot-busy: #FFB7B2; /* Мягкий коралл */
+            --text-color: #4A4A4A;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1, h2 { text-align: center; font-weight: 300; }
+
+        /* Главные кнопки */
+        .main-btn {
+            width: 100%;
+            max-width: 300px;
+            padding: 20px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 20px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .btn-book { background-color: var(--btn-book); color: #fff; }
+        .btn-promo { background-color: #CBAACB; color: #fff; } /* Лиловый */
+
+        .main-btn:active { transform: scale(0.98); }
+
+        /* Экраны (скрыты по умолчанию) */
+        .screen { display: none; width: 100%; max-width: 400px; }
+        .active { display: block; }
+
+        /* График */
+        .schedule-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); /* 3 колонки */
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .time-slot {
+            padding: 15px;
+            text-align: center;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .free { background-color: var(--slot-free); color: #3b6e3b; }
+        .busy { background-color: var(--slot-busy); color: #8a3b3b; cursor: not-allowed; }
+
+        /* Купон лояльности */
+        .loyalty-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+
+        .stamps-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .stamp-box {
+            height: 60px;
+            background: #f0f0f0;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .stamp-box.filled {
+            background: #FFDAC1; /* Персиковый */
+            border: 2px solid #FFDAC1;
+            color: #fff;
+        }
+
+        /* Форма регистрации */
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+        
+        .back-btn {
+            background: none;
+            border: none;
+            color: #888;
+            margin-bottom: 15px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="home-screen" class="screen active">
+        <h1>Маникюр & Педикюр</h1>
+        <p style="text-align:center; color:#888;">Ваш личный мастер</p>
+        
+        <button class="main-btn btn-book" onclick="showScreen('booking-screen')">📅 ЗАПИСЬ</button>
+        <button class="main-btn btn-promo" onclick="showScreen('promo-screen')">🎁 АКЦИЯ (-50%)</button>
+        <button class="main-btn" style="background:#FFFFB5; color:#555;" onclick="showScreen('admin-login')">🔒 Вход для мастера</button>
+    </div>
+
+    <div id="booking-screen" class="screen">
+        <button class="back-btn" onclick="showScreen('home-screen')">← Назад</button>
+        <h2>Выберите время</h2>
+        <div id="calendar-date">Понедельник, 24 Янв</div>
+        
+        <div class="schedule-grid">
+            <div class="time-slot busy">10:00</div>
+            <div class="time-slot free" onclick="openBookingForm('12:00')">12:00</div>
+            <div class="time-slot free" onclick="openBookingForm('14:00')">14:00</div>
+            <div class="time-slot busy">16:00</div>
+            <div class="time-slot free" onclick="openBookingForm('18:00')">18:00</div>
+            <div class="time-slot free" onclick="openBookingForm('20:00')">20:00</div>
+        </div>
+    </div>
+
+    <div id="form-screen" class="screen">
+        <button class="back-btn" onclick="showScreen('booking-screen')">← Назад</button>
+        <h2>Оформление записи</h2>
+        <p>Время: <span id="selected-time" style="font-weight:bold; color:#A0D2EB;"></span></p>
+        
+        <input type="text" placeholder="Имя и Фамилия" id="client-name">
+        <textarea placeholder="Адрес (куда мастеру приехать)" id="client-address"></textarea>
+        
+        <button class="main-btn btn-book" onclick="confirmBooking()">Подтвердить запись</button>
+    </div>
+
+    <div id="promo-screen" class="screen">
+        <button class="back-btn" onclick="showScreen('home-screen')">← Назад</button>
+        <h2>Ваша карта лояльности</h2>
+        <div class="loyalty-card">
+            <p>Соберите 6 штампов и получите скидку 50%!</p>
+            <div class="stamps-container" id="stamps-grid">
+                <div class="stamp-box filled">🌸</div>
+                <div class="stamp-box filled">🌸</div>
+                <div class="stamp-box"></div>
+                <div class="stamp-box"></div>
+                <div class="stamp-box"></div>
+                <div class="stamp-box">50%</div>
+            </div>
+            <p style="font-size: 0.9rem; color: #777;">Покажите этот экран мастеру после процедуры для получения печати.</p>
+        </div>
+    </div>
+
+    <div id="admin-screen" class="screen">
+        <button class="back-btn" onclick="showScreen('home-screen')">← Выйти</button>
+        <h2>Кабинет Мастера</h2>
+        <div style="background: white; padding: 15px; border-radius: 10px; margin-bottom: 10px;">
+            <h3>Новые заявки</h3>
+            <ul style="list-style: none; padding: 0;">
+                <li style="border-bottom: 1px solid #eee; padding: 10px 0;">
+                    <strong>Анна Иванова</strong><br>
+                    12:00, ул. Ленина 5<br>
+                    <button style="background: var(--slot-free); border:none; padding:5px 10px; border-radius:5px;">Подтвердить</button>
+                    <button style="background: var(--slot-busy); border:none; padding:5px 10px; border-radius:5px;">Изменить</button>
+                </li>
+            </ul>
+        </div>
+        <button class="main-btn btn-promo" onclick="addStamp()">Поставить печать клиенту</button>
+    </div>
+
+    <script>
+        // Простая навигация
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            if(screenId === 'admin-login') {
+                // В реальности тут пароль
+                document.getElementById('admin-screen').classList.add('active');
+            } else {
+                document.getElementById(screenId).classList.add('active');
+            }
+        }
+
+        // Логика выбора времени
+        function openBookingForm(time) {
+            document.getElementById('selected-time').innerText = time;
+            showScreen('form-screen');
+        }
+
+        // Логика подтверждения
+        function confirmBooking() {
+            const name = document.getElementById('client-name').value;
+            const address = document.getElementById('client-address').value;
+            const time = document.getElementById('selected-time').innerText;
+
+            if(!name || !address) {
+                alert("Пожалуйста, заполните все поля");
+                return;
+            }
+
+            // Имитация отправки уведомления на почту администратора
+            // В реальности тут используется fetch() к вашему серверу или EmailJS
+            alert(`Спасибо, ${name}! Заявка на ${time} отправлена. Мастер свяжется для подтверждения.`);
+            
+            // Сброс и возврат
+            showScreen('home-screen');
+        }
+
+        // Админка: Функция добавления штампа (имитация)
+        function addStamp() {
+            const code = prompt("Введите ID клиента для начисления штампа:");
+            if(code) alert("Штамп успешно добавлен клиенту!");
+        }
+    </script>
+</body>
+</html>
