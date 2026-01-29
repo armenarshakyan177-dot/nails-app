@@ -1,258 +1,636 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <title>Nail Studio App</title>
-    <style>
-        :root {
-            --bg-color: #FDFBF7;
-            --btn-book: #A0D2EB;
-            --btn-promo: #E5EAF5;
-            --slot-free: #D0F0C0;
-            --slot-busy: #FFB7B2;
-            --text-color: #4A4A4A;
-        }
+import React, { useState } from 'react';
+import { Calendar, Gift, User, Mail, MapPin, Clock, Check, X } from 'lucide-react';
 
-        body {
-            font-family: 'Helvetica Neue', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+const NailSalonApp = () => {
+  // ==========================================
+  // 👇 НАСТРОЙКИ TELEGRAM (ЗАПОЛНИТЕ ЭТО!)
+  // ==========================================
+  const TG_BOT_TOKEN = "8581694314:AAFyOqGsKdAANCy_WuOtrP_8O6th-Tqne4k"; // Например: "756473:AAF..." (обязательно в кавычках)
+  const TG_CHAT_ID = "6744712545";      // Например: "123456789" (обязательно в кавычках)
+  // ==========================================
 
-        h1, h2 { text-align: center; font-weight: 300; }
+  const [currentView, setCurrentView] = useState('login');
+  const [userType, setUserType] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+  
+  // Sample data
+  const [users, setUsers] = useState([
+    {
+      id: 1,
+      firstName: 'Anna',
+      lastName: 'Smith',
+      address: '123 Main St, Apt 4B',
+      email: 'anna@email.com',
+      stamps: 3,
+      appointments: [
+        { id: 1, date: '2026-02-03', time: '10:00', status: 'confirmed' }
+      ]
+    }
+  ]);
 
-        .main-btn {
-            width: 100%;
-            max-width: 300px;
-            padding: 20px;
-            margin: 10px 0;
-            border: none;
-            border-radius: 20px;
-            font-size: 1.2rem;
-            cursor: pointer;
-            transition: transform 0.2s;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
+  const [adminEmail, setAdminEmail] = useState('admin@nailsalon.com');
+  
+  const [schedule, setSchedule] = useState({
+    'Monday': ['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00'],
+    'Tuesday': ['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00'],
+    'Wednesday': ['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00'],
+    'Thursday': ['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00'],
+    'Friday': ['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00'],
+    'Saturday': ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00'],
+    'Sunday': ['10:00', '11:00', '12:00', '13:00']
+  });
 
-        .btn-book { background-color: var(--btn-book); color: #fff; }
-        .btn-promo { background-color: #CBAACB; color: #fff; }
+  const [bookedSlots, setBookedSlots] = useState([
+    { day: 'Monday', time: '10:00', userId: 1, status: 'confirmed' },
+    { day: 'Wednesday', time: '14:00', userId: 1, status: 'confirmed' }
+  ]);
 
-        .main-btn:active { transform: scale(0.98); }
+  const [pendingBookings, setPendingBookings] = useState([]);
 
-        .screen { display: none; width: 100%; max-width: 400px; }
-        .active { display: block; }
+  // Registration form state
+  const [regForm, setRegForm] = useState({
+    firstName: '',
+    lastName: '',
+    address: '',
+    email: ''
+  });
 
-        /* График */
-        .schedule-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            margin-top: 20px;
-        }
+  // --- ФУНКЦИЯ ОТПРАВКИ В TELEGRAM ---
+  const sendTelegramNotification = async (message) => {
+    if (TG_BOT_TOKEN === "ВАШ_ТОКЕН_БОТА" || TG_CHAT_ID === "ВАШ_CHAT_ID") {
+      alert("⚠️ Ошибка: Вы забыли вписать Токен или ID в коде!");
+      return;
+    }
 
-        .time-slot {
-            padding: 15px;
-            text-align: center;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: bold;
-        }
+    const url = `https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`;
 
-        .free { background-color: var(--slot-free); color: #3b6e3b; }
-        .busy { background-color: var(--slot-busy); color: #8a3b3b; cursor: not-allowed; }
+    try {
+      await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          chat_id: TG_CHAT_ID,
+          text: message,
+          parse_mode: 'HTML'
+        }),
+      });
+      console.log("Сообщение отправлено в Telegram");
+    } catch (error) {
+      console.error("Ошибка отправки в Telegram:", error);
+      alert("Ошибка соединения с Telegram.");
+    }
+  };
 
-        /* Купон */
-        .loyalty-card {
-            background: white;
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-            text-align: center;
-        }
+  // Login
+  const handleLogin = (type) => {
+    setUserType(type);
+    if (type === 'admin') {
+      setCurrentView('adminDashboard');
+    } else {
+      setCurrentView('register');
+    }
+  };
 
-        .stamps-container {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            margin: 20px 0;
-        }
+  // Register new client
+  const handleRegister = () => {
+    if (regForm.firstName && regForm.lastName && regForm.address && regForm.email) {
+      const newUser = {
+        id: users.length + 1,
+        ...regForm,
+        stamps: 0,
+        appointments: []
+      };
+      setUsers([...users, newUser]);
+      setCurrentUser(newUser);
+      setCurrentView('clientDashboard');
+    }
+  };
 
-        .stamp-box {
-            height: 60px;
-            background: #f0f0f0;
-            border: 2px dashed #ccc;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-        }
+  // Book appointment (ИЗМЕНЕНО: Добавлена отправка)
+  const handleBooking = (day, time) => {
+    const isBooked = bookedSlots.some(slot => slot.day === day && slot.time === time);
+    if (!isBooked && currentUser) {
+      const newBooking = {
+        day,
+        time,
+        userId: currentUser.id,
+        status: 'pending',
+        id: Date.now()
+      };
+      setPendingBookings([...pendingBookings, newBooking]);
+      
+      // Формируем красивое сообщение
+      const text = `
+💅 <b>Новая заявка на маникюр!</b>
 
-        .stamp-box.filled {
-            background: #FFDAC1;
-            border: 2px solid #FFDAC1;
-            color: #fff;
-        }
+👤 <b>Клиент:</b> ${currentUser.firstName} ${currentUser.lastName}
+📅 <b>День:</b> ${day}
+⏰ <b>Время:</b> ${time}
+📍 <b>Адрес:</b> ${currentUser.address}
+📞 <b>Email:</b> ${currentUser.email}
+      `;
 
-        /* Формы */
-        input, textarea {
-            width: 100%;
-            padding: 12px;
-            margin: 8px 0;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-sizing: border-box;
-        }
-        
-        .back-btn {
-            background: none;
-            border: none;
-            color: #888;
-            margin-bottom: 15px;
-            cursor: pointer;
-        }
+      // Отправляем
+      sendTelegramNotification(text);
 
-        /* Скрытая кнопка админа по умолчанию */
-        #admin-btn-wrapper {
-            display: none; /* Скрыто для всех! */
-            width: 100%;
-            max-width: 300px;
-        }
-    </style>
-</head>
-<body>
+      alert(`Заявка отправлена! ${day} в ${time}. Мастер скоро свяжется с вами.`);
+    }
+  };
 
-    <div id="home-screen" class="screen active">
-        <h1>Маникюр & Педикюр</h1>
-        <p style="text-align:center; color:#888;">Ваш личный мастер</p>
-        
-        <button class="main-btn btn-book" onclick="showScreen('booking-screen')">📅 ЗАПИСЬ</button>
-        <button class="main-btn btn-promo" onclick="showScreen('promo-screen')">🎁 АКЦИЯ (-50%)</button>
-        
-        <div id="admin-btn-wrapper">
-            <button class="main-btn" style="background:#FFFFB5; color:#555;" onclick="showScreen('admin-screen')">🔒 Кабинет Мастера</button>
+  // Admin confirms booking
+  const confirmBooking = (booking) => {
+    setBookedSlots([...bookedSlots, { ...booking, status: 'confirmed' }]);
+    setPendingBookings(pendingBookings.filter(b => b.id !== booking.id));
+    
+    const user = users.find(u => u.id === booking.userId);
+    setUsers(users.map(u => 
+      u.id === booking.userId 
+        ? { ...u, appointments: [...u.appointments, { ...booking, status: 'confirmed' }] }
+        : u
+    ));
+    
+    alert(`Booking confirmed! Email sent to ${adminEmail}`);
+  };
+
+  // Add stamp
+  const addStamp = (userId) => {
+    setUsers(users.map(u => 
+      u.id === userId && u.stamps < 6
+        ? { ...u, stamps: u.stamps + 1 }
+        : u
+    ));
+  };
+
+  // Login View
+  if (currentView === 'login') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full">
+          <div className="text-center mb-8">
+            <div className="text-6xl mb-4">💅</div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 bg-clip-text text-transparent">
+              Nail Salon Booking
+            </h1>
+            <p className="text-gray-600 mt-2">Your beauty, our priority</p>
+          </div>
+          
+          <div className="space-y-4">
+            <button
+              onClick={() => handleLogin('client')}
+              className="w-full py-4 bg-gradient-to-r from-pink-400 to-purple-400 text-white rounded-2xl font-semibold text-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition"
+            >
+              Client Login
+            </button>
+            <button
+              onClick={() => handleLogin('admin')}
+              className="w-full py-4 bg-gradient-to-r from-purple-400 to-blue-400 text-white rounded-2xl font-semibold text-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition"
+            >
+              Administrator Login
+            </button>
+          </div>
         </div>
-    </div>
+      </div>
+    );
+  }
 
-    <div id="booking-screen" class="screen">
-        <button class="back-btn" onclick="showScreen('home-screen')">← Назад</button>
-        <h2>Выберите время</h2>
-        <div id="calendar-date">Понедельник, 24 Янв</div>
-        <div class="schedule-grid">
-            <div class="time-slot busy">10:00</div>
-            <div class="time-slot free" onclick="openBookingForm('12:00')">12:00</div>
-            <div class="time-slot free" onclick="openBookingForm('14:00')">14:00</div>
-            <div class="time-slot busy">16:00</div>
-            <div class="time-slot free" onclick="openBookingForm('18:00')">18:00</div>
-            <div class="time-slot free" onclick="openBookingForm('20:00')">20:00</div>
-        </div>
-    </div>
-
-    <div id="form-screen" class="screen">
-        <button class="back-btn" onclick="showScreen('booking-screen')">← Назад</button>
-        <h2>Оформление</h2>
-        <p>Время: <span id="selected-time" style="font-weight:bold; color:#A0D2EB;"></span></p>
-        <input type="text" placeholder="Имя и Фамилия" id="client-name">
-        <textarea placeholder="Адрес" id="client-address"></textarea>
-        <button class="main-btn btn-book" onclick="confirmBooking()">Подтвердить</button>
-    </div>
-
-    <div id="promo-screen" class="screen">
-        <button class="back-btn" onclick="showScreen('home-screen')">← Назад</button>
-        <h2>Карта лояльности</h2>
-        <div class="loyalty-card">
-            <p>Соберите 6 штампов!</p>
-            <div class="stamps-container" id="stamps-grid">
-                <div class="stamp-box filled">🌸</div>
-                <div class="stamp-box filled">🌸</div>
-                <div class="stamp-box"></div>
-                <div class="stamp-box"></div>
-                <div class="stamp-box"></div>
-                <div class="stamp-box">50%</div>
+  // Registration View
+  if (currentView === 'register') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 p-4">
+        <div className="max-w-2xl mx-auto bg-white rounded-3xl shadow-2xl p-8 mt-8">
+          <h2 className="text-3xl font-bold text-center mb-6 bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">
+            Client Registration
+          </h2>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-gray-700 font-semibold mb-2">First Name</label>
+              <input
+                type="text"
+                value={regForm.firstName}
+                onChange={(e) => setRegForm({...regForm, firstName: e.target.value})}
+                className="w-full px-4 py-3 rounded-xl border-2 border-pink-200 focus:border-pink-400 outline-none"
+              />
             </div>
+            
+            <div>
+              <label className="block text-gray-700 font-semibold mb-2">Last Name</label>
+              <input
+                type="text"
+                value={regForm.lastName}
+                onChange={(e) => setRegForm({...regForm, lastName: e.target.value})}
+                className="w-full px-4 py-3 rounded-xl border-2 border-purple-200 focus:border-purple-400 outline-none"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-gray-700 font-semibold mb-2">Address (where master should come)</label>
+              <input
+                type="text"
+                value={regForm.address}
+                onChange={(e) => setRegForm({...regForm, address: e.target.value})}
+                className="w-full px-4 py-3 rounded-xl border-2 border-blue-200 focus:border-blue-400 outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-gray-700 font-semibold mb-2">Email</label>
+              <input
+                type="email"
+                value={regForm.email}
+                onChange={(e) => setRegForm({...regForm, email: e.target.value})}
+                className="w-full px-4 py-3 rounded-xl border-2 border-pink-200 focus:border-pink-400 outline-none"
+              />
+            </div>
+            
+            <button
+              onClick={handleRegister}
+              className="w-full py-4 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-2xl font-bold text-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition mt-6"
+            >
+              Register
+            </button>
+          </div>
         </div>
-    </div>
+      </div>
+    );
+  }
 
-    <div id="admin-screen" class="screen">
-        <button class="back-btn" onclick="showScreen('home-screen')">← Выйти</button>
-        <h2>Кабинет Мастера</h2>
-        <div style="background: white; padding: 15px; border-radius: 10px; margin-bottom: 10px;">
-            <h3>Заявки</h3>
-            <ul style="list-style: none; padding: 0;">
-                <li style="border-bottom: 1px solid #eee; padding: 10px 0;">
-                    <strong>Анна Иванова</strong><br>
-                    12:00, ул. Ленина 5<br>
-                    <button style="background: var(--slot-free); border:none; padding:5px; border-radius:5px;">✓</button>
-                    <button style="background: var(--slot-busy); border:none; padding:5px; border-radius:5px;">X</button>
-                </li>
-            </ul>
+  // Client Dashboard
+  if (currentView === 'clientDashboard') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 p-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 mb-6">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h2 className="text-3xl font-bold bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">
+                  Welcome, {currentUser?.firstName}!
+                </h2>
+                <p className="text-gray-600 mt-1">Your beauty journey starts here</p>
+              </div>
+              <button
+                onClick={() => {
+                  setCurrentView('login');
+                  setCurrentUser(null);
+                }}
+                className="px-6 py-2 bg-gray-200 rounded-xl hover:bg-gray-300 transition"
+              >
+                Logout
+              </button>
+            </div>
+
+            {/* Loyalty Card */}
+            <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-2xl p-6 mb-6">
+              <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                <Gift className="mr-2 text-pink-500" /> Loyalty Card
+              </h3>
+              <div className="grid grid-cols-6 gap-3">
+                {[...Array(6)].map((_, i) => (
+                  <div
+                    key={i}
+                    className={`aspect-square rounded-xl flex items-center justify-center text-3xl ${
+                      i < currentUser?.stamps
+                        ? 'bg-gradient-to-br from-pink-400 to-purple-400 shadow-lg'
+                        : 'bg-white border-2 border-dashed border-gray-300'
+                    }`}
+                  >
+                    {i < currentUser?.stamps ? '✓' : ''}
+                  </div>
+                ))}
+              </div>
+              <p className="text-center mt-4 text-gray-700 font-semibold">
+                {currentUser?.stamps === 6 
+                  ? '🎉 Congratulations! 50% discount available!'
+                  : `${currentUser?.stamps}/6 stamps - ${6 - currentUser?.stamps} more for 50% off!`
+                }
+              </p>
+            </div>
+
+            {/* Appointments */}
+            <div className="bg-blue-50 rounded-2xl p-6 mb-6">
+              <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                <Calendar className="mr-2 text-blue-500" /> My Appointments
+              </h3>
+              {currentUser?.appointments.length > 0 ? (
+                <div className="space-y-3">
+                  {currentUser.appointments.map((apt, idx) => (
+                    <div key={idx} className="bg-white rounded-xl p-4 flex justify-between items-center">
+                      <div>
+                        <p className="font-semibold text-gray-800">{apt.day} at {apt.time}</p>
+                        <p className="text-sm text-gray-600">Status: {apt.status}</p>
+                      </div>
+                      <div className="px-4 py-2 bg-green-100 text-green-700 rounded-lg font-semibold">
+                        Confirmed
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-600">No appointments yet. Book your first appointment!</p>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <button
+                onClick={() => setCurrentView('booking')}
+                className="py-6 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-2xl font-bold text-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition"
+              >
+                📅 Book Appointment
+              </button>
+              <button
+                onClick={() => setCurrentView('promotion')}
+                className="py-6 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-2xl font-bold text-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition"
+              >
+                🎁 Promotions
+              </button>
+            </div>
+          </div>
         </div>
-        <button class="main-btn btn-promo" onclick="addStamp()">+ Штамп клиенту</button>
-    </div>
+      </div>
+    );
+  }
 
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand(); // Раскрываем на весь экран
+  // Booking View
+  if (currentView === 'booking') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 p-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="bg-white rounded-3xl shadow-2xl p-8">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">
+                Book Your Appointment
+              </h2>
+              <button
+                onClick={() => setCurrentView('clientDashboard')}
+                className="px-6 py-2 bg-gray-200 rounded-xl hover:bg-gray-300 transition"
+              >
+                Back
+              </button>
+            </div>
 
-        // ==========================================
-        // ВАЖНО: Вставь сюда свой ID из @userinfobot
-        // ==========================================
-        const ADMIN_ID = 6744712545; // Поменяйте нули на ваш номер!
-        
-        // Проверка: Ты админ или нет?
-        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-            // Заполняем имя клиента автоматически
-            const user = tg.initDataUnsafe.user;
-            document.getElementById('client-name').value = user.first_name + ' ' + (user.last_name || '');
+            <div className="space-y-6">
+              {Object.entries(schedule).map(([day, times]) => (
+                <div key={day} className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-2xl p-6">
+                  <h3 className="text-xl font-bold text-gray-800 mb-4">{day}</h3>
+                  <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
+                    {times.map((time) => {
+                      const isBooked = bookedSlots.some(
+                        slot => slot.day === day && slot.time === time
+                      );
+                      return (
+                        <button
+                          key={time}
+                          onClick={() => !isBooked && handleBooking(day, time)}
+                          disabled={isBooked}
+                          className={`py-3 px-2 rounded-xl font-semibold transition ${
+                            isBooked
+                              ? 'bg-red-400 text-white cursor-not-allowed'
+                              : 'bg-green-400 text-white hover:bg-green-500 transform hover:scale-105'
+                          }`}
+                        >
+                          {time}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
 
-            // Если ID совпадает с вашим, показываем кнопку админа
-            if (user.id === ADMIN_ID) {
-                document.getElementById('admin-btn-wrapper').style.display = 'block';
-            }
-        } else {
-            // Если открыли просто в браузере (для тестов), можно временно показать кнопку
-            // document.getElementById('admin-btn-wrapper').style.display = 'block';
-        }
+            <div className="mt-6 bg-blue-50 rounded-2xl p-4">
+              <p className="text-gray-700 font-semibold">
+                🟢 Green = Available &nbsp;&nbsp; 🔴 Red = Booked
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-        // Навигация
-        function showScreen(screenId) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(screenId).classList.add('active');
-        }
+  // Promotion View
+  if (currentView === 'promotion') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 p-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-3xl shadow-2xl p-8">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">
+                🎁 Special Promotion
+              </h2>
+              <button
+                onClick={() => setCurrentView('clientDashboard')}
+                className="px-6 py-2 bg-gray-200 rounded-xl hover:bg-gray-300 transition"
+              >
+                Back
+              </button>
+            </div>
 
-        // Бронирование
-        function openBookingForm(time) {
-            document.getElementById('selected-time').innerText = time;
-            showScreen('form-screen');
-        }
+            <div className="bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 rounded-2xl p-8 mb-6">
+              <div className="text-center">
+                <div className="text-6xl mb-4">💅✨</div>
+                <h3 className="text-4xl font-bold text-gray-800 mb-4">
+                  Loyalty Reward Program
+                </h3>
+                <div className="text-6xl font-bold bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent mb-4">
+                  50% OFF
+                </div>
+              </div>
+            </div>
 
-        function confirmBooking() {
-            const name = document.getElementById('client-name').value;
-            const address = document.getElementById('client-address').value;
-            const time = document.getElementById('selected-time').innerText;
+            <div className="space-y-6">
+              <div className="bg-pink-50 rounded-2xl p-6">
+                <h4 className="text-xl font-bold text-gray-800 mb-3 flex items-center">
+                  <Gift className="mr-2 text-pink-500" /> How It Works
+                </h4>
+                <div className="space-y-3 text-gray-700">
+                  <p>✓ Create your account and start collecting stamps</p>
+                  <p>✓ Receive one digital stamp after each completed service</p>
+                  <p>✓ Collect all 6 stamps on your loyalty card</p>
+                  <p>✓ Enjoy 50% discount on your next service!</p>
+                </div>
+              </div>
 
-            if(!name || !address) {
-                tg.showAlert("Заполните все поля!");
-                return;
-            }
+              <div className="bg-purple-50 rounded-2xl p-6">
+                <h4 className="text-xl font-bold text-gray-800 mb-3">Terms & Conditions</h4>
+                <div className="space-y-2 text-gray-700 text-sm">
+                  <p>• Stamps are awarded after payment and service completion</p>
+                  <p>• The 50% discount applies to one service of your choice</p>
+                  <p>• Stamps do not expire</p>
+                  <p>• Cannot be combined with other offers</p>
+                  <p>• After using your discount, your card resets and you can start collecting again</p>
+                </div>
+              </div>
 
-            // Отправляем данные (пока только вывод на экран)
-            tg.showAlert(`Готово! Ждем вас в ${time}.`);
-            tg.close();
-        }
+              <div className="bg-blue-50 rounded-2xl p-6 text-center">
+                <p className="text-gray-700 font-semibold text-lg">
+                  Start your beauty journey today and enjoy exclusive rewards! 💖
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-        // Админ функции
-        function addStamp() {
-            const code = prompt("ID клиента:");
-            if(code) alert("Штамп добавлен!");
-        }
-    </script>
-</body>
-</html>
+  // Admin Dashboard
+  if (currentView === 'adminDashboard') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-100 via-blue-100 to-pink-100 p-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-white rounded-3xl shadow-2xl p-8">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-500 to-blue-500 bg-clip-text text-transparent">
+                  Administrator Dashboard
+                </h2>
+                <p className="text-gray-600 mt-1">Manage bookings and clients</p>
+              </div>
+              <button
+                onClick={() => setCurrentView('login')}
+                className="px-6 py-2 bg-gray-200 rounded-xl hover:bg-gray-300 transition"
+              >
+                Logout
+              </button>
+            </div>
+
+            {/* Email Settings */}
+            <div className="bg-blue-50 rounded-2xl p-6 mb-6">
+              <h3 className="text-xl font-bold text-gray-800 mb-3 flex items-center">
+                <Mail className="mr-2 text-blue-500" /> Email Notifications
+              </h3>
+              <div className="flex items-center gap-4">
+                <input
+                  type="email"
+                  value={adminEmail}
+                  onChange={(e) => setAdminEmail(e.target.value)}
+                  className="flex-1 px-4 py-3 rounded-xl border-2 border-blue-200 focus:border-blue-400 outline-none"
+                />
+                <button className="px-6 py-3 bg-blue-500 text-white rounded-xl font-semibold hover:bg-blue-600 transition">
+                  Save
+                </button>
+              </div>
+            </div>
+
+            {/* Pending Bookings */}
+            {pendingBookings.length > 0 && (
+              <div className="bg-yellow-50 rounded-2xl p-6 mb-6">
+                <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                  <Clock className="mr-2 text-yellow-600" /> Pending Bookings
+                </h3>
+                <div className="space-y-3">
+                  {pendingBookings.map((booking) => {
+                    const user = users.find(u => u.id === booking.userId);
+                    return (
+                      <div key={booking.id} className="bg-white rounded-xl p-4 flex justify-between items-center">
+                        <div>
+                          <p className="font-bold text-gray-800">{user?.firstName} {user?.lastName}</p>
+                          <p className="text-gray-600">{booking.day} at {booking.time}</p>
+                          <p className="text-sm text-gray-500">{user?.address}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => confirmBooking(booking)}
+                            className="px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition flex items-center gap-1"
+                          >
+                            <Check size={16} /> Confirm
+                          </button>
+                          <button
+                            onClick={() => setPendingBookings(pendingBookings.filter(b => b.id !== booking.id))}
+                            className="px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition flex items-center gap-1"
+                          >
+                            <X size={16} /> Decline
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* All Clients */}
+            <div className="bg-purple-50 rounded-2xl p-6 mb-6">
+              <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                <User className="mr-2 text-purple-500" /> All Clients
+              </h3>
+              <div className="space-y-3">
+                {users.map((user) => (
+                  <div key={user.id} className="bg-white rounded-xl p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <p className="font-bold text-gray-800">{user.firstName} {user.lastName}</p>
+                        <p className="text-sm text-gray-600 flex items-center gap-1">
+                          <MapPin size={14} /> {user.address}
+                        </p>
+                        <p className="text-sm text-gray-600 flex items-center gap-1">
+                          <Mail size={14} /> {user.email}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => addStamp(user.id)}
+                        disabled={user.stamps >= 6}
+                        className={`px-4 py-2 rounded-xl font-semibold ${
+                          user.stamps >= 6
+                            ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                            : 'bg-gradient-to-r from-pink-500 to-purple-500 text-white hover:shadow-lg transition'
+                        }`}
+                      >
+                        Add Stamp
+                      </button>
+                    </div>
+                    <div className="flex gap-2 mt-3">
+                      {[...Array(6)].map((_, i) => (
+                        <div
+                          key={i}
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm ${
+                            i < user.stamps
+                              ? 'bg-gradient-to-br from-pink-400 to-purple-400 text-white'
+                              : 'bg-gray-200'
+                          }`}
+                        >
+                          {i < user.stamps ? '✓' : ''}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Schedule Overview */}
+            <div className="bg-pink-50 rounded-2xl p-6">
+              <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                <Calendar className="mr-2 text-pink-500" /> This Week's Schedule
+              </h3>
+              <div className="grid grid-cols-7 gap-2">
+                {Object.keys(schedule).map((day) => (
+                  <div key={day} className="bg-white rounded-xl p-3">
+                    <p className="font-bold text-center text-gray-800 mb-2">{day.slice(0, 3)}</p>
+                    <div className="space-y-1">
+                      {bookedSlots
+                        .filter(slot => slot.day === day)
+                        .map((slot, idx) => (
+                          <div key={idx} className="bg-red-100 text-red-700 text-xs rounded px-2 py-1 text-center">
+                            {slot.time}
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+};
+
+export default NailSalonApp;
