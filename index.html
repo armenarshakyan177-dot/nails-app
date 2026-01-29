@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <title>Nail Studio App</title>
     <style>
         :root {
-            --bg-color: #FDFBF7; /* Молочный */
-            --btn-book: #A0D2EB; /* Пастельно-голубой */
-            --btn-promo: #E5EAF5; /* Лавандовый */
-            --slot-free: #D0F0C0; /* Чайный зеленый */
-            --slot-busy: #FFB7B2; /* Мягкий коралл */
+            --bg-color: #FDFBF7;
+            --btn-book: #A0D2EB;
+            --btn-promo: #E5EAF5;
+            --slot-free: #D0F0C0;
+            --slot-busy: #FFB7B2;
             --text-color: #4A4A4A;
         }
 
@@ -27,7 +28,6 @@
 
         h1, h2 { text-align: center; font-weight: 300; }
 
-        /* Главные кнопки */
         .main-btn {
             width: 100%;
             max-width: 300px;
@@ -42,18 +42,17 @@
         }
 
         .btn-book { background-color: var(--btn-book); color: #fff; }
-        .btn-promo { background-color: #CBAACB; color: #fff; } /* Лиловый */
+        .btn-promo { background-color: #CBAACB; color: #fff; }
 
         .main-btn:active { transform: scale(0.98); }
 
-        /* Экраны (скрыты по умолчанию) */
         .screen { display: none; width: 100%; max-width: 400px; }
         .active { display: block; }
 
         /* График */
         .schedule-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr); /* 3 колонки */
+            grid-template-columns: repeat(3, 1fr);
             gap: 10px;
             margin-top: 20px;
         }
@@ -69,7 +68,7 @@
         .free { background-color: var(--slot-free); color: #3b6e3b; }
         .busy { background-color: var(--slot-busy); color: #8a3b3b; cursor: not-allowed; }
 
-        /* Купон лояльности */
+        /* Купон */
         .loyalty-card {
             background: white;
             padding: 20px;
@@ -97,12 +96,12 @@
         }
 
         .stamp-box.filled {
-            background: #FFDAC1; /* Персиковый */
+            background: #FFDAC1;
             border: 2px solid #FFDAC1;
             color: #fff;
         }
 
-        /* Форма регистрации */
+        /* Формы */
         input, textarea {
             width: 100%;
             padding: 12px;
@@ -119,6 +118,13 @@
             margin-bottom: 15px;
             cursor: pointer;
         }
+
+        /* Скрытая кнопка админа по умолчанию */
+        #admin-btn-wrapper {
+            display: none; /* Скрыто для всех! */
+            width: 100%;
+            max-width: 300px;
+        }
     </style>
 </head>
 <body>
@@ -129,14 +135,16 @@
         
         <button class="main-btn btn-book" onclick="showScreen('booking-screen')">📅 ЗАПИСЬ</button>
         <button class="main-btn btn-promo" onclick="showScreen('promo-screen')">🎁 АКЦИЯ (-50%)</button>
-        <button class="main-btn" style="background:#FFFFB5; color:#555;" onclick="showScreen('admin-login')">🔒 Вход для мастера</button>
+        
+        <div id="admin-btn-wrapper">
+            <button class="main-btn" style="background:#FFFFB5; color:#555;" onclick="showScreen('admin-screen')">🔒 Кабинет Мастера</button>
+        </div>
     </div>
 
     <div id="booking-screen" class="screen">
         <button class="back-btn" onclick="showScreen('home-screen')">← Назад</button>
         <h2>Выберите время</h2>
         <div id="calendar-date">Понедельник, 24 Янв</div>
-        
         <div class="schedule-grid">
             <div class="time-slot busy">10:00</div>
             <div class="time-slot free" onclick="openBookingForm('12:00')">12:00</div>
@@ -149,20 +157,18 @@
 
     <div id="form-screen" class="screen">
         <button class="back-btn" onclick="showScreen('booking-screen')">← Назад</button>
-        <h2>Оформление записи</h2>
+        <h2>Оформление</h2>
         <p>Время: <span id="selected-time" style="font-weight:bold; color:#A0D2EB;"></span></p>
-        
         <input type="text" placeholder="Имя и Фамилия" id="client-name">
-        <textarea placeholder="Адрес (куда мастеру приехать)" id="client-address"></textarea>
-        
-        <button class="main-btn btn-book" onclick="confirmBooking()">Подтвердить запись</button>
+        <textarea placeholder="Адрес" id="client-address"></textarea>
+        <button class="main-btn btn-book" onclick="confirmBooking()">Подтвердить</button>
     </div>
 
     <div id="promo-screen" class="screen">
         <button class="back-btn" onclick="showScreen('home-screen')">← Назад</button>
-        <h2>Ваша карта лояльности</h2>
+        <h2>Карта лояльности</h2>
         <div class="loyalty-card">
-            <p>Соберите 6 штампов и получите скидку 50%!</p>
+            <p>Соберите 6 штампов!</p>
             <div class="stamps-container" id="stamps-grid">
                 <div class="stamp-box filled">🌸</div>
                 <div class="stamp-box filled">🌸</div>
@@ -171,7 +177,6 @@
                 <div class="stamp-box"></div>
                 <div class="stamp-box">50%</div>
             </div>
-            <p style="font-size: 0.9rem; color: #777;">Покажите этот экран мастеру после процедуры для получения печати.</p>
         </div>
     </div>
 
@@ -179,60 +184,74 @@
         <button class="back-btn" onclick="showScreen('home-screen')">← Выйти</button>
         <h2>Кабинет Мастера</h2>
         <div style="background: white; padding: 15px; border-radius: 10px; margin-bottom: 10px;">
-            <h3>Новые заявки</h3>
+            <h3>Заявки</h3>
             <ul style="list-style: none; padding: 0;">
                 <li style="border-bottom: 1px solid #eee; padding: 10px 0;">
                     <strong>Анна Иванова</strong><br>
                     12:00, ул. Ленина 5<br>
-                    <button style="background: var(--slot-free); border:none; padding:5px 10px; border-radius:5px;">Подтвердить</button>
-                    <button style="background: var(--slot-busy); border:none; padding:5px 10px; border-radius:5px;">Изменить</button>
+                    <button style="background: var(--slot-free); border:none; padding:5px; border-radius:5px;">✓</button>
+                    <button style="background: var(--slot-busy); border:none; padding:5px; border-radius:5px;">X</button>
                 </li>
             </ul>
         </div>
-        <button class="main-btn btn-promo" onclick="addStamp()">Поставить печать клиенту</button>
+        <button class="main-btn btn-promo" onclick="addStamp()">+ Штамп клиенту</button>
     </div>
 
     <script>
-        // Простая навигация
-        function showScreen(screenId) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            if(screenId === 'admin-login') {
-                // В реальности тут пароль
-                document.getElementById('admin-screen').classList.add('active');
-            } else {
-                document.getElementById(screenId).classList.add('active');
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Раскрываем на весь экран
+
+        // ==========================================
+        // ВАЖНО: Вставь сюда свой ID из @userinfobot
+        // ==========================================
+        const ADMIN_ID = 6744712545; // Поменяйте нули на ваш номер!
+        
+        // Проверка: Ты админ или нет?
+        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            // Заполняем имя клиента автоматически
+            const user = tg.initDataUnsafe.user;
+            document.getElementById('client-name').value = user.first_name + ' ' + (user.last_name || '');
+
+            // Если ID совпадает с вашим, показываем кнопку админа
+            if (user.id === ADMIN_ID) {
+                document.getElementById('admin-btn-wrapper').style.display = 'block';
             }
+        } else {
+            // Если открыли просто в браузере (для тестов), можно временно показать кнопку
+            // document.getElementById('admin-btn-wrapper').style.display = 'block';
         }
 
-        // Логика выбора времени
+        // Навигация
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        // Бронирование
         function openBookingForm(time) {
             document.getElementById('selected-time').innerText = time;
             showScreen('form-screen');
         }
 
-        // Логика подтверждения
         function confirmBooking() {
             const name = document.getElementById('client-name').value;
             const address = document.getElementById('client-address').value;
             const time = document.getElementById('selected-time').innerText;
 
             if(!name || !address) {
-                alert("Пожалуйста, заполните все поля");
+                tg.showAlert("Заполните все поля!");
                 return;
             }
 
-            // Имитация отправки уведомления на почту администратора
-            // В реальности тут используется fetch() к вашему серверу или EmailJS
-            alert(`Спасибо, ${name}! Заявка на ${time} отправлена. Мастер свяжется для подтверждения.`);
-            
-            // Сброс и возврат
-            showScreen('home-screen');
+            // Отправляем данные (пока только вывод на экран)
+            tg.showAlert(`Готово! Ждем вас в ${time}.`);
+            tg.close();
         }
 
-        // Админка: Функция добавления штампа (имитация)
+        // Админ функции
         function addStamp() {
-            const code = prompt("Введите ID клиента для начисления штампа:");
-            if(code) alert("Штамп успешно добавлен клиенту!");
+            const code = prompt("ID клиента:");
+            if(code) alert("Штамп добавлен!");
         }
     </script>
 </body>
