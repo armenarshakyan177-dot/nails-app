@@ -3,256 +3,236 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <title>Nail Studio App</title>
+    <title>Nail Master Запись</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        :root {
-            --bg-color: #FDFBF7;
-            --btn-book: #A0D2EB;
-            --btn-promo: #E5EAF5;
-            --slot-free: #D0F0C0;
-            --slot-busy: #FFB7B2;
-            --text-color: #4A4A4A;
-        }
-
-        body {
-            font-family: 'Helvetica Neue', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        h1, h2 { text-align: center; font-weight: 300; }
-
-        .main-btn {
-            width: 100%;
-            max-width: 300px;
-            padding: 20px;
-            margin: 10px 0;
-            border: none;
-            border-radius: 20px;
-            font-size: 1.2rem;
-            cursor: pointer;
-            transition: transform 0.2s;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-
-        .btn-book { background-color: var(--btn-book); color: #fff; }
-        .btn-promo { background-color: #CBAACB; color: #fff; }
-
-        .main-btn:active { transform: scale(0.98); }
-
-        .screen { display: none; width: 100%; max-width: 400px; }
-        .active { display: block; }
-
-        /* График */
-        .schedule-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .time-slot {
-            padding: 15px;
-            text-align: center;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        .free { background-color: var(--slot-free); color: #3b6e3b; }
-        .busy { background-color: var(--slot-busy); color: #8a3b3b; cursor: not-allowed; }
-
-        /* Купон */
-        .loyalty-card {
-            background: white;
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-            text-align: center;
-        }
-
-        .stamps-container {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            margin: 20px 0;
-        }
-
-        .stamp-box {
-            height: 60px;
-            background: #f0f0f0;
-            border: 2px dashed #ccc;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-        }
-
-        .stamp-box.filled {
-            background: #FFDAC1;
-            border: 2px solid #FFDAC1;
-            color: #fff;
-        }
-
-        /* Формы */
-        input, textarea {
-            width: 100%;
-            padding: 12px;
-            margin: 8px 0;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-sizing: border-box;
-        }
-        
-        .back-btn {
-            background: none;
-            border: none;
-            color: #888;
-            margin-bottom: 15px;
-            cursor: pointer;
-        }
-
-        /* Скрытая кнопка админа по умолчанию */
-        #admin-btn-wrapper {
-            display: none; /* Скрыто для всех! */
-            width: 100%;
-            max-width: 300px;
-        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); }
     </style>
 </head>
-<body>
+<body class="bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 min-h-screen">
 
-    <div id="home-screen" class="screen active">
-        <h1>Маникюр & Педикюр</h1>
-        <p style="text-align:center; color:#888;">Ваш личный мастер</p>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // =================================================================
+        // 👇👇👇 НАСТРОЙКИ (ВСТАВЬ СВОИ ДАННЫЕ СЮДА) 👇👇👇
+        // =================================================================
         
-        <button class="main-btn btn-book" onclick="showScreen('booking-screen')">📅 ЗАПИСЬ</button>
-        <button class="main-btn btn-promo" onclick="showScreen('promo-screen')">🎁 АКЦИЯ (-50%)</button>
+        // 1. Твой токен от BotFather
+        const TG_BOT_TOKEN = "8581694314:AAFyOqGsKdAANCy_WuOtrP_8O6th-Tqne4k"; 
         
-        <div id="admin-btn-wrapper">
-            <button class="main-btn" style="background:#FFFFB5; color:#555;" onclick="showScreen('admin-screen')">🔒 Кабинет Мастера</button>
-        </div>
-    </div>
-
-    <div id="booking-screen" class="screen">
-        <button class="back-btn" onclick="showScreen('home-screen')">← Назад</button>
-        <h2>Выберите время</h2>
-        <div id="calendar-date">Понедельник, 24 Янв</div>
-        <div class="schedule-grid">
-            <div class="time-slot busy">10:00</div>
-            <div class="time-slot free" onclick="openBookingForm('12:00')">12:00</div>
-            <div class="time-slot free" onclick="openBookingForm('14:00')">14:00</div>
-            <div class="time-slot busy">16:00</div>
-            <div class="time-slot free" onclick="openBookingForm('18:00')">18:00</div>
-            <div class="time-slot free" onclick="openBookingForm('20:00')">20:00</div>
-        </div>
-    </div>
-
-    <div id="form-screen" class="screen">
-        <button class="back-btn" onclick="showScreen('booking-screen')">← Назад</button>
-        <h2>Оформление</h2>
-        <p>Время: <span id="selected-time" style="font-weight:bold; color:#A0D2EB;"></span></p>
-        <input type="text" placeholder="Имя и Фамилия" id="client-name">
-        <textarea placeholder="Адрес" id="client-address"></textarea>
-        <button class="main-btn btn-book" onclick="confirmBooking()">Подтвердить</button>
-    </div>
-
-    <div id="promo-screen" class="screen">
-        <button class="back-btn" onclick="showScreen('home-screen')">← Назад</button>
-        <h2>Карта лояльности</h2>
-        <div class="loyalty-card">
-            <p>Соберите 6 штампов!</p>
-            <div class="stamps-container" id="stamps-grid">
-                <div class="stamp-box filled">🌸</div>
-                <div class="stamp-box filled">🌸</div>
-                <div class="stamp-box"></div>
-                <div class="stamp-box"></div>
-                <div class="stamp-box"></div>
-                <div class="stamp-box">50%</div>
-            </div>
-        </div>
-    </div>
-
-    <div id="admin-screen" class="screen">
-        <button class="back-btn" onclick="showScreen('home-screen')">← Выйти</button>
-        <h2>Кабинет Мастера</h2>
-        <div style="background: white; padding: 15px; border-radius: 10px; margin-bottom: 10px;">
-            <h3>Заявки</h3>
-            <ul style="list-style: none; padding: 0;">
-                <li style="border-bottom: 1px solid #eee; padding: 10px 0;">
-                    <strong>Анна Иванова</strong><br>
-                    12:00, ул. Ленина 5<br>
-                    <button style="background: var(--slot-free); border:none; padding:5px; border-radius:5px;">✓</button>
-                    <button style="background: var(--slot-busy); border:none; padding:5px; border-radius:5px;">X</button>
-                </li>
-            </ul>
-        </div>
-        <button class="main-btn btn-promo" onclick="addStamp()">+ Штамп клиенту</button>
-    </div>
-
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand(); // Раскрываем на весь экран
-
-        // ==========================================
-        // ВАЖНО: Вставь сюда свой ID из @userinfobot
-        // ==========================================
-        const ADMIN_ID = 6744712545; // Поменяйте нули на ваш номер!
+        // 2. Твой цифровой ID (число)
+        const TG_CHAT_ID = "6744712545";      
         
-        // Проверка: Ты админ или нет?
-        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-            // Заполняем имя клиента автоматически
-            const user = tg.initDataUnsafe.user;
-            document.getElementById('client-name').value = user.first_name + ' ' + (user.last_name || '');
+        // 3. Ссылка на Google Script (Deployment URL)
+        // Она должна заканчиваться на /exec
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyp64kfADN--ddoIrHx8US713BIV4R7B26pFRa6Nbpc3_9HcsEUI3ggjyARgzAzJNnR0w/exec"; 
 
-            // Если ID совпадает с вашим, показываем кнопку админа
-            if (user.id === ADMIN_ID) {
-                document.getElementById('admin-btn-wrapper').style.display = 'block';
+        // =================================================================
+
+        const NailSalonApp = () => {
+            const [currentView, setCurrentView] = useState('login');
+            const [currentUser, setCurrentUser] = useState(null);
+            
+            // Расписание (пример)
+            const schedule = {
+                'Понедельник': ['10:00', '12:00', '14:00', '16:00', '18:00'],
+                'Вторник': ['10:00', '12:00', '14:00', '16:00', '18:00'],
+                'Среда': ['10:00', '12:00', '14:00', '16:00', '18:00'],
+                'Четверг': ['10:00', '12:00', '14:00', '16:00', '18:00'],
+                'Пятница': ['10:00', '12:00', '14:00', '16:00'],
+                'Суббота': ['11:00', '13:00', '15:00'],
+                'Воскресенье': ['12:00', '14:00']
+            };
+
+            // Локальное состояние занятых слотов (для визуализации)
+            const [bookedSlots, setBookedSlots] = useState([]);
+
+            // Форма регистрации
+            const [regForm, setRegForm] = useState({ firstName: '', phone: '' });
+
+            // --- ЛОГИКА ОТПРАВКИ ---
+            const sendNotifications = async (day, time, user) => {
+                const message = `💅 *НОВАЯ ЗАПИСЬ!*\n\n` +
+                                `👤 Клиент: ${user.firstName}\n` +
+                                `📞 Телефон: ${user.phone}\n` +
+                                `📅 Дата: ${day}\n` +
+                                `⏰ Время: ${time}`;
+
+                // 1. Отправка в Telegram
+                if (TG_BOT_TOKEN !== "ВСТАВЬ_СЮДА_ТОКЕН") {
+                    try {
+                        await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`, {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({
+                                chat_id: TG_CHAT_ID,
+                                text: message,
+                                parse_mode: 'Markdown'
+                            })
+                        });
+                        console.log("Telegram отправлен");
+                    } catch (e) { console.error("Ошибка TG:", e); }
+                }
+
+                // 2. Отправка в Google Таблицу
+                if (GOOGLE_SCRIPT_URL !== "ВСТАВЬ_СЮДА_ССЫЛКУ_GOOGLE_SCRIPT") {
+                    try {
+                        await fetch(GOOGLE_SCRIPT_URL, {
+                            method: 'POST',
+                            mode: 'no-cors', // Важно для обхода ошибки 302/CORS
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                date: new Date().toLocaleString(),
+                                name: user.firstName,
+                                username: user.phone, // Используем телефон как username
+                                id: Math.floor(Math.random() * 10000) // Случайный ID
+                            })
+                        });
+                        console.log("Google отправлен");
+                    } catch (e) { console.error("Ошибка Google:", e); }
+                }
+            };
+
+            const handleLogin = () => {
+                if(regForm.firstName && regForm.phone) {
+                    setCurrentUser(regForm);
+                    setCurrentView('dashboard');
+                } else {
+                    alert("Пожалуйста, заполните имя и телефон!");
+                }
+            };
+
+            const handleBooking = (day, time) => {
+                // Проверка, не занято ли уже (визуально)
+                if(bookedSlots.some(s => s.day === day && s.time === time)) {
+                    return; 
+                }
+
+                // Добавляем в "занято"
+                setBookedSlots([...bookedSlots, { day, time }]);
+                
+                // Отправляем данные админу
+                sendNotifications(day, time, currentUser);
+
+                alert(`✅ Вы записаны на ${day} в ${time}!\nМастер скоро свяжется с вами для подтверждения.`);
+            };
+
+            // --- ЭКРАНЫ ---
+
+            // 1. ВХОД / РЕГИСТРАЦИЯ
+            if (currentView === 'login') {
+                return (
+                    <div className="flex flex-col items-center justify-center min-h-screen p-4">
+                        <div className="glass p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center">
+                            <div className="text-6xl mb-4">💅</div>
+                            <h1 className="text-3xl font-bold text-gray-800 mb-2">Nail Master</h1>
+                            <p className="text-gray-500 mb-8">Запись на маникюр онлайн</p>
+                            
+                            <input 
+                                type="text" 
+                                placeholder="Ваше Имя" 
+                                className="w-full p-3 rounded-xl border border-pink-200 mb-4 focus:outline-none focus:ring-2 focus:ring-pink-400"
+                                value={regForm.firstName}
+                                onChange={e => setRegForm({...regForm, firstName: e.target.value})}
+                            />
+                            <input 
+                                type="tel" 
+                                placeholder="Ваш Телефон" 
+                                className="w-full p-3 rounded-xl border border-purple-200 mb-6 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                                value={regForm.phone}
+                                onChange={e => setRegForm({...regForm, phone: e.target.value})}
+                            />
+                            
+                            <button 
+                                onClick={handleLogin}
+                                className="w-full py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl font-bold shadow-lg transform active:scale-95 transition"
+                            >
+                                Войти
+                            </button>
+                        </div>
+                    </div>
+                );
             }
-        } else {
-            // Если открыли просто в браузере (для тестов), можно временно показать кнопку
-            // document.getElementById('admin-btn-wrapper').style.display = 'block';
-        }
 
-        // Навигация
-        function showScreen(screenId) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(screenId).classList.add('active');
-        }
+            // 2. ГЛАВНОЕ МЕНЮ
+            if (currentView === 'dashboard') {
+                return (
+                    <div className="p-4 max-w-md mx-auto">
+                        <div className="bg-white rounded-3xl shadow-xl p-6 mb-6">
+                            <h2 className="text-2xl font-bold text-gray-800">Привет, {currentUser.firstName}! 👋</h2>
+                            <p className="text-gray-500">Выберите услугу или время</p>
+                        </div>
 
-        // Бронирование
-        function openBookingForm(time) {
-            document.getElementById('selected-time').innerText = time;
-            showScreen('form-screen');
-        }
+                        <button 
+                            onClick={() => setCurrentView('booking')}
+                            className="w-full py-6 mb-4 bg-gradient-to-r from-pink-400 to-red-400 text-white rounded-2xl font-bold text-xl shadow-lg flex items-center justify-center gap-2 transform active:scale-95 transition"
+                        >
+                            📅 Записаться
+                        </button>
 
-        function confirmBooking() {
-            const name = document.getElementById('client-name').value;
-            const address = document.getElementById('client-address').value;
-            const time = document.getElementById('selected-time').innerText;
-
-            if(!name || !address) {
-                tg.showAlert("Заполните все поля!");
-                return;
+                        <button 
+                            className="w-full py-6 mb-4 bg-gradient-to-r from-purple-400 to-indigo-400 text-white rounded-2xl font-bold text-xl shadow-lg flex items-center justify-center gap-2 transform active:scale-95 transition"
+                            onClick={() => alert("У вас пока нет активных акций")}
+                        >
+                            🎁 Акции
+                        </button>
+                        
+                        <div className="text-center mt-8">
+                             <button onClick={() => setCurrentView('login')} className="text-gray-400 text-sm">Выйти</button>
+                        </div>
+                    </div>
+                );
             }
 
-            // Отправляем данные (пока только вывод на экран)
-            tg.showAlert(`Готово! Ждем вас в ${time}.`);
-            tg.close();
-        }
+            // 3. ВЫБОР ВРЕМЕНИ (ЗАПИСЬ)
+            if (currentView === 'booking') {
+                return (
+                    <div className="p-4 max-w-md mx-auto pb-10">
+                        <div className="flex items-center mb-6">
+                            <button onClick={() => setCurrentView('dashboard')} className="p-2 bg-white rounded-full shadow mr-4">⬅️</button>
+                            <h2 className="text-2xl font-bold text-gray-800">Выберите время</h2>
+                        </div>
 
-        // Админ функции
-        function addStamp() {
-            const code = prompt("ID клиента:");
-            if(code) alert("Штамп добавлен!");
-        }
+                        <div className="space-y-6">
+                            {Object.entries(schedule).map(([day, times]) => (
+                                <div key={day} className="bg-white rounded-2xl p-5 shadow-sm">
+                                    <h3 className="font-bold text-lg text-pink-600 mb-3">{day}</h3>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {times.map(time => {
+                                            const isBooked = bookedSlots.some(s => s.day === day && s.time === time);
+                                            return (
+                                                <button 
+                                                    key={time}
+                                                    disabled={isBooked}
+                                                    onClick={() => handleBooking(day, time)}
+                                                    className={`py-2 rounded-lg text-sm font-semibold transition ${
+                                                        isBooked 
+                                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                                                        : 'bg-green-100 text-green-700 hover:bg-green-200'
+                                                    }`}
+                                                >
+                                                    {isBooked ? 'Занято' : time}
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                );
+            }
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<NailSalonApp />);
     </script>
 </body>
 </html>
