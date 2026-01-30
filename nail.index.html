@@ -2,237 +2,337 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nail Master Запись</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nail Master App</title>
+    
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .glass { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f3f4f6; }
+        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        /* Скрываем скроллбар для красоты */
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+        .stamp-active { background: linear-gradient(135deg, #f472b6, #a855f7); color: white; border: none; }
+        .stamp-empty { border: 2px dashed #d1d5db; color: transparent; }
     </style>
 </head>
-<body class="bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 min-h-screen">
+<body>
 
-    <div id="root"></div>
+<div id="root"></div>
 
-    <script type="text/babel">
-        const { useState, useEffect } = React;
+<script type="text/babel">
+    const { useState, useEffect } = React;
+    
+    // =================================================================
+    // 👇👇👇 НАСТРОЙКИ (ЗАПОЛНИ ЭТО!) 👇👇👇
+    // =================================================================
+    
+    const TG_BOT_TOKEN = "8581694314:AAFyOqGsKdAANCy_WuOtrP_8O6th-Tqne4k"; 
+    const TG_CHAT_ID = "6744712545";  // <--- ВАЖНО: Кнопка админа появится ТОЛЬКО у этого ID
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyp64kfADN--ddoIrHx8US713BIV4R7B26pFRa6Nbpc3_9HcsEUI3ggjyARgzAzJNnR0w/exec"; 
 
-        // =================================================================
-        // 👇👇👇 НАСТРОЙКИ (ВСТАВЬ СВОИ ДАННЫЕ СЮДА) 👇👇👇
-        // =================================================================
+    // =================================================================
+
+    // Иконки (SVG)
+    const IconCheck = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>;
+    const IconClock = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>;
+    const IconGift = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg>;
+
+    const App = () => {
+        // --- ПОЛУЧАЕМ ID ИЗ TELEGRAM ---
+        const tg = window.Telegram.WebApp;
+        const userTelegramId = tg.initDataUnsafe?.user?.id;
         
-        // 1. Твой токен от BotFather
-        const TG_BOT_TOKEN = "8581694314:AAFyOqGsKdAANCy_WuOtrP_8O6th-Tqne4k"; 
-        
-        // 2. Твой цифровой ID (число)
-        const TG_CHAT_ID = "6744712545";      
-        
-        // 3. Ссылка на Google Script (Deployment URL)
-        // Она должна заканчиваться на /exec
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyp64kfADN--ddoIrHx8US713BIV4R7B26pFRa6Nbpc3_9HcsEUI3ggjyARgzAzJNnR0w/exec"; 
+        // Проверяем: это Админ открыл приложение или нет?
+        // (Сравниваем ID из Телеграма с тем, что ты вписал в настройках)
+        const isOwner = String(userTelegramId) === String(TG_CHAT_ID);
 
-        // =================================================================
+        useEffect(() => {
+            tg.expand(); // Раскрываем на весь экран
+            tg.ready();
+        }, []);
 
-        const NailSalonApp = () => {
-            const [currentView, setCurrentView] = useState('login');
-            const [currentUser, setCurrentUser] = useState(null);
+        // --- СОСТОЯНИЕ ---
+        const [view, setView] = useState('login'); 
+        const [currentUser, setCurrentUser] = useState(null);
+        
+        // Базы данных (LocalStorage)
+        const [clients, setClients] = useState(() => {
+            const saved = localStorage.getItem('clients');
+            return saved ? JSON.parse(saved) : [];
+        });
+        const [bookings, setBookings] = useState(() => {
+            const saved = localStorage.getItem('bookings');
+            return saved ? JSON.parse(saved) : [];
+        });
+
+        useEffect(() => localStorage.setItem('clients', JSON.stringify(clients)), [clients]);
+        useEffect(() => localStorage.setItem('bookings', JSON.stringify(bookings)), [bookings]);
+
+        const [loginForm, setLoginForm] = useState({ name: '', phone: '' });
+        const [adminPass, setAdminPass] = useState('');
+
+        const schedule = {
+            'Пн': ['10:00', '12:00', '14:00', '16:00'],
+            'Вт': ['10:00', '12:00', '14:00', '16:00'],
+            'Ср': ['10:00', '12:00', '14:00', '16:00'],
+            'Чт': ['10:00', '12:00', '14:00', '16:00'],
+            'Пт': ['10:00', '12:00', '14:00'],
+        };
+
+        // --- ЛОГИКА ---
+
+        const handleClientLogin = () => {
+            if (!loginForm.name || !loginForm.phone) return alert("Введите имя и телефон");
+            let user = clients.find(c => c.phone === loginForm.phone);
+            if (!user) {
+                user = { id: Date.now(), name: loginForm.name, phone: loginForm.phone, stamps: 0 };
+                setClients([...clients, user]);
+            }
+            setCurrentUser(user);
+            setView('client');
+        };
+
+        const handleAdminLogin = () => {
+            if (adminPass === 'admin') setView('admin');
+            else alert("Неверный пароль");
+        };
+
+        const createBooking = async (day, time) => {
+            const newBooking = {
+                id: Date.now(),
+                clientId: currentUser.id,
+                clientName: currentUser.name,
+                day,
+                time,
+                status: 'pending'
+            };
+            setBookings([...bookings, newBooking]);
             
-            // Расписание (пример)
-            const schedule = {
-                'Понедельник': ['10:00', '12:00', '14:00', '16:00', '18:00'],
-                'Вторник': ['10:00', '12:00', '14:00', '16:00', '18:00'],
-                'Среда': ['10:00', '12:00', '14:00', '16:00', '18:00'],
-                'Четверг': ['10:00', '12:00', '14:00', '16:00', '18:00'],
-                'Пятница': ['10:00', '12:00', '14:00', '16:00'],
-                'Суббота': ['11:00', '13:00', '15:00'],
-                'Воскресенье': ['12:00', '14:00']
-            };
+            // Отправка в Telegram
+            const msg = `💅 *ЗАЯВКА!* \n👤 ${currentUser.name}\n📞 ${currentUser.phone}\n📅 ${day} в ${time}`;
+            if (TG_BOT_TOKEN !== "ВСТАВЬ_ТОКЕН_БОТА") {
+                try {
+                    await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ chat_id: TG_CHAT_ID, text: msg, parse_mode: 'Markdown' })
+                    });
+                } catch(e) {}
+            }
+            alert("Заявка отправлена!");
+            setView('client');
+        };
 
-            // Локальное состояние занятых слотов (для визуализации)
-            const [bookedSlots, setBookedSlots] = useState([]);
+        const confirmBooking = (bookingId) => {
+            const updated = bookings.map(b => b.id === bookingId ? { ...b, status: 'confirmed' } : b);
+            setBookings(updated);
+        };
 
-            // Форма регистрации
-            const [regForm, setRegForm] = useState({ firstName: '', phone: '' });
+        const addStamp = (clientId) => {
+            const updatedClients = clients.map(c => {
+                if (c.id === clientId) return { ...c, stamps: c.stamps >= 6 ? 0 : c.stamps + 1 };
+                return c;
+            });
+            setClients(updatedClients);
+        };
 
-            // --- ЛОГИКА ОТПРАВКИ ---
-            const sendNotifications = async (day, time, user) => {
-                const message = `💅 *НОВАЯ ЗАПИСЬ!*\n\n` +
-                                `👤 Клиент: ${user.firstName}\n` +
-                                `📞 Телефон: ${user.phone}\n` +
-                                `📅 Дата: ${day}\n` +
-                                `⏰ Время: ${time}`;
+        // --- ЭКРАНЫ ---
 
-                // 1. Отправка в Telegram
-                if (TG_BOT_TOKEN !== "ВСТАВЬ_СЮДА_ТОКЕН") {
-                    try {
-                        await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`, {
-                            method: 'POST',
-                            headers: {'Content-Type': 'application/json'},
-                            body: JSON.stringify({
-                                chat_id: TG_CHAT_ID,
-                                text: message,
-                                parse_mode: 'Markdown'
-                            })
-                        });
-                        console.log("Telegram отправлен");
-                    } catch (e) { console.error("Ошибка TG:", e); }
-                }
-
-                // 2. Отправка в Google Таблицу
-                if (GOOGLE_SCRIPT_URL !== "ВСТАВЬ_СЮДА_ССЫЛКУ_GOOGLE_SCRIPT") {
-                    try {
-                        await fetch(GOOGLE_SCRIPT_URL, {
-                            method: 'POST',
-                            mode: 'no-cors', // Важно для обхода ошибки 302/CORS
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                date: new Date().toLocaleString(),
-                                name: user.firstName,
-                                username: user.phone, // Используем телефон как username
-                                id: Math.floor(Math.random() * 10000) // Случайный ID
-                            })
-                        });
-                        console.log("Google отправлен");
-                    } catch (e) { console.error("Ошибка Google:", e); }
-                }
-            };
-
-            const handleLogin = () => {
-                if(regForm.firstName && regForm.phone) {
-                    setCurrentUser(regForm);
-                    setCurrentView('dashboard');
-                } else {
-                    alert("Пожалуйста, заполните имя и телефон!");
-                }
-            };
-
-            const handleBooking = (day, time) => {
-                // Проверка, не занято ли уже (визуально)
-                if(bookedSlots.some(s => s.day === day && s.time === time)) {
-                    return; 
-                }
-
-                // Добавляем в "занято"
-                setBookedSlots([...bookedSlots, { day, time }]);
-                
-                // Отправляем данные админу
-                sendNotifications(day, time, currentUser);
-
-                alert(`✅ Вы записаны на ${day} в ${time}!\nМастер скоро свяжется с вами для подтверждения.`);
-            };
-
-            // --- ЭКРАНЫ ---
-
-            // 1. ВХОД / РЕГИСТРАЦИЯ
-            if (currentView === 'login') {
-                return (
-                    <div className="flex flex-col items-center justify-center min-h-screen p-4">
-                        <div className="glass p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center">
-                            <div className="text-6xl mb-4">💅</div>
-                            <h1 className="text-3xl font-bold text-gray-800 mb-2">Nail Master</h1>
-                            <p className="text-gray-500 mb-8">Запись на маникюр онлайн</p>
+        // 1. ЛОГИН
+        if (view === 'login') {
+            return (
+                <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-pink-100 to-purple-200">
+                    <div className="glass p-8 rounded-3xl w-full max-w-sm shadow-xl text-center">
+                        <div className="text-6xl mb-4">💅</div>
+                        <h1 className="text-2xl font-bold mb-6 text-gray-800">Nail Master</h1>
+                        
+                        <div className="space-y-4">
+                            {/* Если зашел АДМИН (по ID), показываем ему приветствие, но логинится он может как клиент для теста */}
+                            {isOwner && <p className="text-green-600 font-bold text-sm">👋 Привет, Админ!</p>}
                             
                             <input 
-                                type="text" 
                                 placeholder="Ваше Имя" 
-                                className="w-full p-3 rounded-xl border border-pink-200 mb-4 focus:outline-none focus:ring-2 focus:ring-pink-400"
-                                value={regForm.firstName}
-                                onChange={e => setRegForm({...regForm, firstName: e.target.value})}
+                                value={loginForm.name}
+                                onChange={e => setLoginForm({...loginForm, name: e.target.value})}
+                                className="w-full p-3 rounded-xl border border-pink-200 outline-none focus:ring-2 focus:ring-pink-400"
                             />
                             <input 
-                                type="tel" 
-                                placeholder="Ваш Телефон" 
-                                className="w-full p-3 rounded-xl border border-purple-200 mb-6 focus:outline-none focus:ring-2 focus:ring-purple-400"
-                                value={regForm.phone}
-                                onChange={e => setRegForm({...regForm, phone: e.target.value})}
+                                placeholder="Телефон" 
+                                value={loginForm.phone}
+                                onChange={e => setLoginForm({...loginForm, phone: e.target.value})}
+                                className="w-full p-3 rounded-xl border border-pink-200 outline-none focus:ring-2 focus:ring-pink-400"
                             />
-                            
-                            <button 
-                                onClick={handleLogin}
-                                className="w-full py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl font-bold shadow-lg transform active:scale-95 transition"
-                            >
-                                Войти
+                            <button onClick={handleClientLogin} className="w-full py-3 bg-pink-500 text-white rounded-xl font-bold shadow-lg hover:bg-pink-600 transition">
+                                Войти как Клиент
                             </button>
                         </div>
-                    </div>
-                );
-            }
 
-            // 2. ГЛАВНОЕ МЕНЮ
-            if (currentView === 'dashboard') {
-                return (
-                    <div className="p-4 max-w-md mx-auto">
-                        <div className="bg-white rounded-3xl shadow-xl p-6 mb-6">
-                            <h2 className="text-2xl font-bold text-gray-800">Привет, {currentUser.firstName}! 👋</h2>
-                            <p className="text-gray-500">Выберите услугу или время</p>
-                        </div>
-
-                        <button 
-                            onClick={() => setCurrentView('booking')}
-                            className="w-full py-6 mb-4 bg-gradient-to-r from-pink-400 to-red-400 text-white rounded-2xl font-bold text-xl shadow-lg flex items-center justify-center gap-2 transform active:scale-95 transition"
-                        >
-                            📅 Записаться
-                        </button>
-
-                        <button 
-                            className="w-full py-6 mb-4 bg-gradient-to-r from-purple-400 to-indigo-400 text-white rounded-2xl font-bold text-xl shadow-lg flex items-center justify-center gap-2 transform active:scale-95 transition"
-                            onClick={() => alert("У вас пока нет активных акций")}
-                        >
-                            🎁 Акции
-                        </button>
+                        {/* 🔥 ЭТОТ БЛОК ВИДИТ ТОЛЬКО ВЛАДЕЛЕЦ ID (isOwner) 🔥 */}
+                        {isOwner && (
+                            <div className="mt-8 border-t border-gray-300 pt-4 bg-gray-50 rounded-xl p-4">
+                                <p className="text-sm text-gray-500 mb-2 font-bold">👑 Панель управления</p>
+                                <div className="flex gap-2">
+                                    <input 
+                                        type="password"
+                                        placeholder="Пароль (admin)" 
+                                        value={adminPass}
+                                        onChange={e => setAdminPass(e.target.value)}
+                                        className="w-full p-2 rounded-lg border text-sm"
+                                    />
+                                    <button onClick={handleAdminLogin} className="px-4 bg-gray-800 text-white rounded-lg text-sm font-bold">➜</button>
+                                </div>
+                            </div>
+                        )}
                         
-                        <div className="text-center mt-8">
-                             <button onClick={() => setCurrentView('login')} className="text-gray-400 text-sm">Выйти</button>
-                        </div>
                     </div>
-                );
-            }
+                </div>
+            );
+        }
 
-            // 3. ВЫБОР ВРЕМЕНИ (ЗАПИСЬ)
-            if (currentView === 'booking') {
-                return (
-                    <div className="p-4 max-w-md mx-auto pb-10">
-                        <div className="flex items-center mb-6">
-                            <button onClick={() => setCurrentView('dashboard')} className="p-2 bg-white rounded-full shadow mr-4">⬅️</button>
-                            <h2 className="text-2xl font-bold text-gray-800">Выберите время</h2>
+        // 2. КАБИНЕТ КЛИЕНТА (Остался без изменений)
+        if (view === 'client') {
+            const myBookings = bookings.filter(b => b.clientId === currentUser.id);
+            return (
+                <div className="min-h-screen p-4 bg-gray-50 max-w-md mx-auto">
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-2xl font-bold text-gray-800">Привет, {currentUser.name}!</h2>
+                        <button onClick={() => setView('login')} className="text-sm text-gray-400">Выйти</button>
+                    </div>
+
+                    <div className="bg-white p-6 rounded-3xl shadow-lg mb-6 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 bg-yellow-400 text-xs font-bold px-3 py-1 rounded-bl-xl">АКЦИЯ -50%</div>
+                        <h3 className="font-bold text-gray-700 mb-4 flex items-center gap-2">
+                            <IconGift /> Моя скидка
+                        </h3>
+                        <div className="grid grid-cols-6 gap-2">
+                            {[...Array(6)].map((_, i) => (
+                                <div key={i} className={`aspect-square rounded-lg flex items-center justify-center text-lg font-bold transition-all ${
+                                    i < currentUser.stamps ? 'stamp-active shadow-md scale-105' : 'stamp-empty'
+                                }`}>
+                                    {i < currentUser.stamps && <IconCheck />}
+                                </div>
+                            ))}
                         </div>
+                        <p className="text-center text-sm text-gray-500 mt-4">
+                            {currentUser.stamps >= 6 ? '🎉 У вас скидка 50%!' : `Соберите еще ${6 - currentUser.stamps} печати`}
+                        </p>
+                    </div>
 
-                        <div className="space-y-6">
-                            {Object.entries(schedule).map(([day, times]) => (
-                                <div key={day} className="bg-white rounded-2xl p-5 shadow-sm">
-                                    <h3 className="font-bold text-lg text-pink-600 mb-3">{day}</h3>
-                                    <div className="grid grid-cols-3 gap-2">
-                                        {times.map(time => {
-                                            const isBooked = bookedSlots.some(s => s.day === day && s.time === time);
-                                            return (
-                                                <button 
-                                                    key={time}
-                                                    disabled={isBooked}
-                                                    onClick={() => handleBooking(day, time)}
-                                                    className={`py-2 rounded-lg text-sm font-semibold transition ${
-                                                        isBooked 
-                                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                                                        : 'bg-green-100 text-green-700 hover:bg-green-200'
-                                                    }`}
-                                                >
-                                                    {isBooked ? 'Занято' : time}
-                                                </button>
-                                            )
-                                        })}
-                                    </div>
+                    <button onClick={() => setView('booking')} className="w-full py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-2xl font-bold text-xl shadow-lg mb-6 transform active:scale-95 transition">
+                        📅 Записаться
+                    </button>
+
+                    <h3 className="font-bold text-gray-700 mb-3">Мои записи</h3>
+                    <div className="space-y-3">
+                        {myBookings.length === 0 && <p className="text-gray-400 text-sm">Нет записей</p>}
+                        {myBookings.map(b => (
+                            <div key={b.id} className="bg-white p-4 rounded-xl shadow-sm flex justify-between items-center border-l-4" 
+                                 style={{ borderColor: b.status === 'confirmed' ? '#10b981' : '#f59e0b' }}>
+                                <div>
+                                    <p className="font-bold text-gray-800">{b.day} в {b.time}</p>
+                                </div>
+                                <div className={`px-3 py-1 rounded-full text-xs font-bold ${
+                                    b.status === 'confirmed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                                }`}>
+                                    {b.status === 'confirmed' ? 'Готово' : 'Ждем'}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        // 3. ВЫБОР ВРЕМЕНИ
+        if (view === 'booking') {
+            return (
+                <div className="min-h-screen p-4 bg-gray-50 max-w-md mx-auto">
+                    <button onClick={() => setView('client')} className="mb-4 text-gray-500">← Назад</button>
+                    <h2 className="text-2xl font-bold mb-6">Выберите время</h2>
+                    <div className="space-y-6">
+                        {Object.entries(schedule).map(([day, times]) => (
+                            <div key={day} className="bg-white p-4 rounded-2xl shadow-sm">
+                                <h3 className="font-bold text-pink-600 mb-3">{day}</h3>
+                                <div className="grid grid-cols-4 gap-2">
+                                    {times.map(time => {
+                                        const isBusy = bookings.some(b => b.day === day && b.time === time);
+                                        return (
+                                            <button 
+                                                key={time} disabled={isBusy}
+                                                onClick={() => createBooking(day, time)}
+                                                className={`py-2 rounded-lg text-sm font-semibold ${
+                                                    isBusy ? 'bg-gray-100 text-gray-300' : 'bg-green-50 text-green-600 border border-green-200'
+                                                }`}
+                                            >
+                                                {time}
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        // 4. КАБИНЕТ АДМИНА
+        if (view === 'admin') {
+            const pending = bookings.filter(b => b.status === 'pending');
+            return (
+                <div className="min-h-screen p-4 bg-gray-800 text-white max-w-md mx-auto">
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-xl font-bold">Админ Панель</h2>
+                        <button onClick={() => setView('login')} className="text-sm text-gray-400">Выйти</button>
+                    </div>
+
+                    <div className="mb-8">
+                        <h3 className="text-yellow-400 font-bold mb-3 flex items-center gap-2"><IconClock /> Новые заявки ({pending.length})</h3>
+                        <div className="space-y-3">
+                            {pending.length === 0 && <p className="text-gray-500 text-sm">Нет новых заявок</p>}
+                            {pending.map(b => (
+                                <div key={b.id} className="bg-gray-700 p-4 rounded-xl">
+                                    <p className="font-bold text-lg">{b.clientName}</p>
+                                    <p className="text-gray-300 mb-3">{b.day} в {b.time}</p>
+                                    <button onClick={() => confirmBooking(b.id)} className="w-full py-2 bg-green-500 hover:bg-green-600 rounded-lg font-bold transition">
+                                        Подтвердить ✅
+                                    </button>
                                 </div>
                             ))}
                         </div>
                     </div>
-                );
-            }
-        };
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<NailSalonApp />);
-    </script>
+                    <div className="mb-8">
+                        <h3 className="text-pink-400 font-bold mb-3 flex items-center gap-2"><IconGift /> Управление скидками</h3>
+                        <div className="bg-gray-700 rounded-xl p-4 space-y-4">
+                            {clients.map(c => (
+                                <div key={c.id} className="flex justify-between items-center border-b border-gray-600 pb-2 last:border-0">
+                                    <div>
+                                        <p className="font-bold">{c.name}</p>
+                                        <div className="flex gap-1 mt-1">
+                                            {[...Array(6)].map((_, i) => (
+                                                <div key={i} className={`w-2 h-2 rounded-full ${i < c.stamps ? 'bg-pink-500' : 'bg-gray-500'}`}></div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <button onClick={() => addStamp(c.id)} className="px-3 py-1 bg-blue-500 rounded text-sm font-bold">+ Печать</button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+</script>
 </body>
 </html>
