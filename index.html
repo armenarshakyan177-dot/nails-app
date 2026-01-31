@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nail Master CyberApp</title>
+    <title>Nail Master App</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
@@ -18,7 +19,6 @@
         /* === 🌆 CYBERPUNK ГЛОБАЛЬНЫЕ СТИЛИ === */
         body { 
             font-family: 'Segoe UI', sans-serif; 
-            /* Темный фон с цифровой сеткой */
             background-color: #050510;
             background-image: 
                 linear-gradient(rgba(236, 72, 153, 0.1) 1px, transparent 1px),
@@ -27,19 +27,30 @@
             color: #e0e0ff;
         }
 
-        /* Футуристичный шрифт для заголовков */
         .font-cyber { font-family: 'Orbitron', sans-serif; }
 
-        /* Неоновое свечение текста */
-        .neon-text-pink { text-shadow: 0 0 5px #ec4899, 0 0 15px #ec4899; }
-        .neon-text-blue { text-shadow: 0 0 5px #06b6d4, 0 0 15px #06b6d4; }
+        /* СТИЛЬ ДЛЯ ЛОГОТИПА "Nail Master" */
+        .font-logo { 
+            font-family: 'Great Vibes', cursive;
+            background: linear-gradient(to bottom, #ffd700, #ffb700, #c92a2a); /* Золото-красный градиент */
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5), 0 0 10px rgba(255, 215, 0, 0.5); /* Тень и золотое свечение */
+            filter: drop-shadow(0px 0px 2px #c92a2a); /* Красная обводка */
+        }
 
-        /* Кибер-панель (вместо стекла) */
+        /* Класс для вашей картинки */
+        .logo-image {
+            width: 150px; /* Размер картинки */
+            height: auto;
+            filter: drop-shadow(0 0 10px rgba(236, 72, 153, 0.5)); /* Розовое свечение вокруг картинки */
+        }
+
+        /* Кибер-панель */
         .cyber-panel {
             background: rgba(10, 10, 20, 0.8);
             border: 2px solid #ec4899;
             box-shadow: 0 0 20px rgba(236, 72, 153, 0.3), inset 0 0 20px rgba(6, 182, 212, 0.1);
-            /* Обрезанный угол в стиле sci-fi */
             clip-path: polygon(0 0, 100% 0, 100% 90%, 90% 100%, 0 100%);
             backdrop-filter: blur(5px);
         }
@@ -48,9 +59,9 @@
         .cyber-input {
             background: rgba(0, 0, 0, 0.5) !important;
             border: none !important;
-            border-left: 3px solid #ec4899 !important; /* Розовая полоса слева */
-            border-bottom: 1px solid #06b6d4 !important; /* Голубая полоса снизу */
-            color: #06b6d4 !important; /* Голубой текст */
+            border-left: 3px solid #ec4899 !important;
+            border-bottom: 1px solid #06b6d4 !important;
+            color: #06b6d4 !important;
             font-family: 'Orbitron', monospace;
             letter-spacing: 1px;
         }
@@ -68,12 +79,11 @@
             font-family: 'Orbitron', sans-serif;
             text-transform: uppercase;
             letter-spacing: 2px;
-            clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%); /* Скошенная форма */
+            clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
             box-shadow: 0 0 15px rgba(236, 72, 153, 0.6);
             position: relative;
             overflow: hidden;
         }
-        /* Эффект блика на кнопке */
         .cyber-button::after {
             content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
             background: linear-gradient(transparent, rgba(255,255,255,0.3), transparent);
@@ -81,8 +91,7 @@
         }
         @keyframes btn-shine { 0% {left: -100%;} 20% {left: 100%;} 100% {left: 100%;} }
 
-        /* Старые стили (для внутренних страниц оставим посветлее) */
-        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        /* Старые стили */
         .stamp-active { background: linear-gradient(135deg, #f472b6, #a855f7); color: white; border: none; box-shadow: 0 4px 6px rgba(236, 72, 153, 0.3); }
         .stamp-empty { border: 2px dashed #d1d5db; color: transparent; background: #f9fafb; }
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #ec4899; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
@@ -114,7 +123,6 @@
     const IconClock = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>;
     const IconGift = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg>;
     const IconUser = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
-    // Иконка терминала для админки
     const IconTerminal = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-cyan-400"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>;
 
     const App = () => {
@@ -123,7 +131,6 @@
         const isOwner = String(userTelegramId) === String(TG_CHAT_ID);
 
         useEffect(() => { tg.expand(); tg.ready(); 
-            // Устанавливаем темный цвет хедера в телеграм
             tg.setHeaderColor('#050510');
             tg.setBackgroundColor('#050510');
         }, []);
@@ -229,29 +236,26 @@
         // 🔥🔥🔥 ГЛАВНАЯ СТРАНИЦА В СТИЛЕ CYBERPUNK 🔥🔥🔥
         if (view === 'login') {
             return (
-                // Фон уже задан в body, тут просто центрируем
                 <div className="min-h-screen flex items-center justify-center p-4">
-                    {/* Кибер-панель */}
                     <div className="cyber-panel p-8 w-full max-w-sm text-center relative overflow-hidden fade-in">
                         
-                        {/* Декоративный элемент: сканирующая линия */}
                         <div className="absolute top-0 left-0 w-full h-1 bg-cyan-400 opacity-50 animate-pulse"></div>
                         
-                        <div className="text-6xl mb-4 relative inline-block">
-                            💅
-                            {/* Неоновое свечение за иконкой */}
+                        <div className="mb-4 relative inline-block">
+                            {/* 👇 ВАША КАРТИНКА (Я использовал прямую ссылку на файл из вашего примера) 👇 */}
+                            <img src="https://i.imgur.com/8Y9Xb0N.png" alt="Nail Master Logo" className="logo-image mx-auto z-10 relative" />
                             <div className="absolute inset-0 bg-pink-500 blur-xl opacity-30 -z-10 animate-pulse"></div>
                         </div>
                         
-                        <h1 className="text-3xl font-bold mb-6 font-cyber text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-cyan-400 neon-text-pink">
-                            CYBER NAILS
-                            <span className="block text-xs text-cyan-300 font-normal mt-1 tracking-widest opacity-70">SYSTEM V.2.077</span>
+                        {/* 👇 ВАШ ТЕКСТ В ЗОЛОТО-КРАСНОМ СТИЛЕ 👇 */}
+                        <h1 className="text-5xl font-bold mb-2 font-logo">
+                            Nail Master
                         </h1>
+                        <span className="block text-xs text-cyan-300 font-normal mb-6 tracking-widest opacity-70 font-cyber">SYSTEM V.2.077</span>
                         
                         <div className="space-y-5 relative z-10">
                             {isOwner && <p className="text-cyan-400 font-bold text-sm font-cyber tracking-wider animate-pulse">/// ADMIN DETECTED ///</p>}
                             
-                            {/* Кибер-инпуты */}
                             <div className="relativeGroup">
                                 <input placeholder="ИМЯ_ПОЛЬЗОВАТЕЛЯ" value={loginForm.name} onChange={e => setLoginForm({...loginForm, name: e.target.value})} className="w-full p-3 rounded-none outline-none transition-all cyber-input"/>
                             </div>
@@ -262,7 +266,6 @@
                                 <input placeholder="ЛОКАЦИЯ (АДРЕС)" value={loginForm.address} onChange={e => setLoginForm({...loginForm, address: e.target.value})} className="w-full p-3 rounded-none outline-none transition-all cyber-input"/>
                             </div>
                             
-                            {/* Кибер-кнопка */}
                             <button onClick={handleClientLogin} className="w-full py-4 mt-4 rounded-none font-bold text-lg transition transform active:scale-95 cyber-button">
                                 ИНИЦИАЛИЗАЦИЯ ВХОДА
                             </button>
@@ -280,21 +283,17 @@
                                 </div>
                             </div>
                         )}
-                         {/* Декоративный элемент: угол */}
                         <div className="absolute bottom-0 right-0 w-8 h-8 border-r-2 border-b-2 border-cyan-400 opacity-50"></div>
                     </div>
                 </div>
             );
         }
 
-        // --- ОСТАЛЬНЫЕ СТРАНИЦЫ (Оставляем светлыми для контраста и удобства чтения) ---
-        
+        // --- ОСТАЛЬНЫЕ СТРАНИЦЫ ---
         if (view === 'client') {
             const myBookings = bookings.filter(b => String(b.phone) === String(currentUser.phone));
             const myStamps = calculateStamps(currentUser.phone);
-            
             return (
-                // Вернем светлый фон для внутренних страниц
                 <div className="min-h-screen p-4 bg-gray-50 max-w-md mx-auto fade-in" style={{backgroundColor: '#f3f4f6', color: '#1f2937'}}>
                     <div className="flex justify-between items-center mb-6">
                         <div>
@@ -303,11 +302,9 @@
                         </div>
                         <button onClick={() => setView('login')} className="text-sm text-pink-500 font-bold">ВЫЙТИ</button>
                     </div>
-
                     <div className="bg-white p-6 rounded-3xl shadow-lg mb-6 relative overflow-hidden">
                         <div className="absolute top-0 right-0 bg-yellow-400 text-xs font-bold px-3 py-1 rounded-bl-xl text-gray-800">АКЦИЯ -50%</div>
                         <h3 className="font-bold text-gray-700 mb-4 flex items-center gap-2"><IconGift className="text-pink-500" /> Моя лояльность</h3>
-                        
                         <div className="grid grid-cols-6 gap-2">
                             {[...Array(6)].map((_, i) => (
                                 <div key={i} className={`aspect-square rounded-lg flex items-center justify-center text-lg font-bold transition-all duration-500 ${i < myStamps ? 'stamp-active scale-105' : 'stamp-empty'}`}>
@@ -321,9 +318,7 @@
                                 : `Соберите еще ${6 - myStamps} печати для скидки 50%`}
                         </p>
                     </div>
-
                     <button onClick={() => setView('booking')} className="w-full py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-2xl font-bold text-xl shadow-lg mb-6 transform active:scale-95 transition">📅 Записаться</button>
-
                     <h3 className="font-bold text-gray-700 mb-3 flex items-center gap-2">История {loading && <div className="loader"></div>}</h3>
                     <div className="space-y-3 pb-10">
                         {myBookings.length === 0 && <p className="text-gray-400 text-sm">Пока нет записей</p>}
@@ -373,7 +368,6 @@
 
         if (view === 'admin') {
             const pending = bookings.filter(b => b.status === 'pending');
-            // Админку тоже оставим темной, но в другом стиле
             return (
                 <div className="min-h-screen p-4 bg-gray-900 text-white max-w-md mx-auto fade-in" style={{backgroundColor: '#111827'}}>
                     <div className="flex justify-between items-center mb-6">
@@ -383,7 +377,6 @@
                             <button onClick={() => setView('login')} className="text-sm text-pink-400 hover:text-pink-300">ВЫЙТИ</button>
                         </div>
                     </div>
-
                     <div className="mb-8">
                         <h3 className="text-yellow-400 font-bold mb-3 flex items-center gap-2"><IconClock /> Новые заявки ({pending.length})</h3>
                         <button onClick={fetchBookings} className="text-xs text-cyan-300 mb-3 underline">🔄 Обновить данные</button>
@@ -407,7 +400,6 @@
                             ))}
                         </div>
                     </div>
-
                     <div className="mb-8 pb-10">
                         <h3 className="text-pink-400 font-bold mb-3 flex items-center gap-2"><IconUser /> База Клиентов</h3>
                         <div className="bg-gray-800 rounded-xl p-4 space-y-4 border border-gray-700">
