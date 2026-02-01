@@ -13,14 +13,8 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <script>
-        window.onerror = function(message, source, lineno, colno, error) {
-            alert("⚠️ ОШИБКА В КОДЕ:\n" + message + "\nСтрока: " + lineno);
-        };
-    </script>
-    
     <style>
-        /* === 🌆 CYBERPUNK STYLES V3.5 (DEBUG) === */
+        /* === 🌆 CYBERPUNK STYLES V4.0 (FINAL) === */
         body { 
             font-family: 'Montserrat', sans-serif; 
             background-color: #050510;
@@ -64,7 +58,9 @@
             display: flex; align-items: center; gap: 6px; padding: 6px 12px;
             text-decoration: none; border: 1px solid #1a8bc0;
             box-shadow: 0 0 10px rgba(34, 158, 217, 0.4);
+            transition: transform 0.1s;
         }
+        .btn-telegram:active { transform: scale(0.95); }
 
         .cyber-input {
             background: rgba(0, 0, 0, 0.6) !important;
@@ -99,7 +95,7 @@
     const ADMIN_PASSWORD = "admin";
 
     // =================================================================
-    // 🖼️ КОНТЕНТ
+    // 🖼️ КОНТЕНТ (РЕДАКТИРУЙТЕ ФОТО И ЦЕНЫ ЗДЕСЬ)
     // =================================================================
     
     const PRICES = [
@@ -165,11 +161,11 @@
                 if(Array.isArray(data)) {
                     setBookings(data); 
                 } else {
-                    setBookings([]); // Защита от кривых данных
+                    setBookings([]); 
                 }
             } catch (error) { 
                 console.error("Err", error); 
-                setBookings([]); // Защита при ошибке сети
+                setBookings([]); 
             }
             setLoading(false);
         };
@@ -236,7 +232,7 @@
                             <img src="./logo.png" alt="Logo" className="w-32 h-32 object-cover rounded-full border-2 border-pink-500 shadow-[0_0_20px_rgba(236,72,153,0.6)] mx-auto" />
                         </div>
                         <h1 className="text-4xl font-bold mb-1 font-logo">NAIL MASTER</h1>
-                        <span className="block text-xs text-cyan-300 mb-8 font-header opacity-70 tracking-widest">SYSTEM V.3.5</span>
+                        <span className="block text-xs text-cyan-300 mb-8 font-header opacity-70 tracking-widest">SYSTEM V.4.0</span>
                         
                         <div className="space-y-4 relative z-10">
                             <input placeholder="ИМЯ" value={loginForm.name} onChange={e => setLoginForm({...loginForm, name: e.target.value})} className="w-full p-3 cyber-input rounded"/>
