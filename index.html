@@ -15,7 +15,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     
     <style>
-        /* === 🌆 CYBERPUNK STYLES V2.2 (TELEGRAM EDITION) === */
+        /* === 🌆 CYBERPUNK STYLES V3.3 === */
         body { 
             font-family: 'Montserrat', sans-serif; 
             background-color: #050510;
@@ -54,7 +54,7 @@
             font-family: 'Orbitron', sans-serif;
         }
         
-        /* 🔥 Кнопка Telegram (Синяя) */
+        /* Кнопка Telegram */
         .btn-telegram {
             background: #2AABEE; color: white; border-radius: 8px; font-weight: bold; font-size: 12px;
             display: flex; align-items: center; gap: 5px; padding: 5px 10px;
@@ -118,7 +118,6 @@
     const Icon = ({ name }) => {
         if(name === 'check') return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>;
         if(name === 'trash') return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
-        // 🔥 Иконка Telegram
         if(name === 'telegram') return <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M21.928 2.528c-.171-.777-.9-1.246-1.637-.991L2.348 8.905c-.754.269-.768 1.343.16 1.838l4.47 2.404L17.75 6.31c.219-.199.497.086.304.305l-8.627 9.536-1.488 5.62c-.172.648.775.98 1.15.426l2.805-4.14 5.39 3.974c.677.498 1.636.149 1.824-.666l3.743-17.712c.036-.168.047-.341.03-.513z"/></svg>;
         return null;
     };
@@ -139,6 +138,8 @@
         const [loading, setLoading] = useState(false); 
         const [loginForm, setLoginForm] = useState({ name: '', phone: '', address: '' });
         const [adminPass, setAdminPass] = useState('');
+        
+        // --- 🔥 ВАЖНО: Эти переменные нужны для экрана записи ---
         const [selectedService, setSelectedService] = useState('Маникюр'); 
         const [showPrice, setShowPrice] = useState(false);
 
@@ -153,7 +154,11 @@
             try {
                 const response = await fetch(GOOGLE_SCRIPT_URL);
                 const data = await response.json();
-                setBookings(data); 
+                if(Array.isArray(data)) {
+                    setBookings(data); 
+                } else {
+                    console.error("Data is not array", data);
+                }
             } catch (error) { console.error("Err", error); }
             setLoading(false);
         };
@@ -202,14 +207,11 @@
 
         const calculateStamps = (phone) => {
             if (!phone) return 0;
-            return bookings.filter(b => String(b.phone) === String(phone) && b.status === 'confirmed').length % 6;
+            return bookings.filter(b => b && String(b.phone) === String(phone) && b.status === 'confirmed').length % 6;
         };
 
-        // --- ФУНКЦИЯ ДЛЯ TELEGRAM ---
         const getTelegramLink = (phone) => {
-            // Очищаем номер от скобок и пробелов
             const cleanPhone = phone.replace(/\D/g, ''); 
-            // Добавляем плюс для надежности ссылки
             return `https://t.me/+${cleanPhone}`;
         };
 
@@ -223,7 +225,7 @@
                             <img src="./logo.png" alt="Logo" className="w-32 h-32 object-cover rounded-full border-2 border-pink-500 shadow-[0_0_20px_rgba(236,72,153,0.6)] mx-auto" />
                         </div>
                         <h1 className="text-4xl font-bold mb-1 font-logo">NAIL MASTER</h1>
-                        <span className="block text-xs text-cyan-300 mb-8 font-header opacity-70 tracking-widest">SYSTEM V.3.2</span>
+                        <span className="block text-xs text-cyan-300 mb-8 font-header opacity-70 tracking-widest">SYSTEM V.3.3</span>
                         
                         <div className="space-y-4 relative z-10">
                             <input placeholder="ИМЯ" value={loginForm.name} onChange={e => setLoginForm({...loginForm, name: e.target.value})} className="w-full p-3 cyber-input rounded"/>
@@ -244,7 +246,7 @@
         }
 
         if (view === 'client') {
-            const myBookings = bookings.filter(b => String(b.phone) === String(currentUser.phone));
+            const myBookings = bookings.filter(b => b && String(b.phone) === String(currentUser.phone));
             const myStamps = calculateStamps(currentUser.phone);
             return (
                 <div className="min-h-screen p-4 pb-20 max-w-md mx-auto fade-in">
@@ -276,7 +278,7 @@
                             ))}
                         </div>
                         <p className="text-center text-xs text-gray-400 mt-3 font-mono">
-                            {myStamps === 0 && bookings.some(b => b.status === 'confirmed') ? 'СКИДКА АКТИВНА!' : `${6 - myStamps} до скидки 50%`}
+                            {myStamps === 0 && bookings.some(b => b && b.status === 'confirmed') ? 'СКИДКА АКТИВНА!' : `${6 - myStamps} до скидки 50%`}
                         </p>
                     </div>
 
@@ -347,7 +349,7 @@
                                 <h3 className="font-bold text-pink-500 mb-3">{day}</h3>
                                 <div className="grid grid-cols-4 gap-2">
                                     {times.map(time => {
-                                        const isBusy = bookings.some(b => b.day === day && b.time === time);
+                                        const isBusy = bookings.some(b => b && b.day === day && b.time === time);
                                         return (
                                             <button key={time} disabled={isBusy} onClick={() => createBooking(day, time)} 
                                                 className={`py-2 rounded text-xs font-bold transition ${isBusy ? 'bg-gray-800 text-gray-600 cursor-not-allowed' : 'bg-cyan-900/30 text-cyan-400 border border-cyan-800 hover:bg-cyan-500 hover:text-white'}`}>
@@ -364,7 +366,7 @@
         }
 
         if (view === 'admin') {
-            const pending = bookings.filter(b => b.status === 'pending');
+            const pending = bookings.filter(b => b && b.status === 'pending');
             return (
                 <div className="min-h-screen p-4 bg-gray-900 text-white max-w-md mx-auto fade-in">
                     <div className="flex justify-between items-center mb-6">
@@ -389,7 +391,6 @@
                                         <p className="font-bold text-lg text-white">{b.name}</p>
                                         <p className="text-xs text-pink-400 font-bold mb-1">{b.service}</p>
                                         
-                                        {/* 👇 НОВАЯ КНОПКА TELEGRAM 👇 */}
                                         <div className="flex items-center gap-2 mb-1">
                                             <p className="text-sm text-cyan-300">📞 {b.phone}</p>
                                             <a href={getTelegramLink(b.phone)} target="_blank" className="btn-telegram">
