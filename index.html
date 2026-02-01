@@ -15,9 +15,9 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     
     <style>
-        /* === 🌆 CYBERPUNK STYLES V2.0 === */
+        /* === 🌆 CYBERPUNK STYLES V2.2 (TELEGRAM EDITION) === */
         body { 
-            font-family: 'Montserrat', sans-serif; /* Основной текст читаемый */
+            font-family: 'Montserrat', sans-serif; 
             background-color: #050510;
             background-image: 
                 linear-gradient(rgba(236, 72, 153, 0.05) 1px, transparent 1px),
@@ -35,7 +35,6 @@
             filter: drop-shadow(0px 0px 5px rgba(201, 42, 42, 0.5));
         }
 
-        /* Неоновая панель (общая для всех блоков) */
         .cyber-card {
             background: rgba(15, 15, 30, 0.9);
             border: 1px solid rgba(236, 72, 153, 0.3);
@@ -44,7 +43,6 @@
             border-radius: 16px;
         }
         
-        /* Кнопки */
         .btn-primary {
             background: linear-gradient(90deg, #ec4899, #8b5cf6);
             color: white; font-family: 'Orbitron', sans-serif; text-transform: uppercase;
@@ -55,8 +53,16 @@
             background: transparent; border: 1px solid #06b6d4; color: #06b6d4;
             font-family: 'Orbitron', sans-serif;
         }
+        
+        /* 🔥 Кнопка Telegram (Синяя) */
+        .btn-telegram {
+            background: #2AABEE; color: white; border-radius: 8px; font-weight: bold; font-size: 12px;
+            display: flex; align-items: center; gap: 5px; padding: 5px 10px;
+            text-decoration: none; border: 1px solid #229ED9;
+            box-shadow: 0 0 10px rgba(42, 171, 238, 0.3);
+        }
+        .btn-telegram:hover { background: #229ED9; }
 
-        /* Инпуты */
         .cyber-input {
             background: rgba(0, 0, 0, 0.6) !important;
             border: 1px solid #333 !important;
@@ -65,15 +71,12 @@
             font-family: 'Orbitron', monospace;
         }
 
-        /* Лоадер */
         .loader { border: 3px solid #333; border-top: 3px solid #ec4899; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Анимации */
         .fade-in { animation: fadeIn 0.4s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        /* Галерея */
         .gallery-scroll { display: flex; overflow-x: auto; gap: 10px; padding-bottom: 10px; scrollbar-width: none; }
     </style>
 </head>
@@ -85,7 +88,7 @@
     const { useState, useEffect, useMemo } = React;
     
     // =================================================================
-    // ⚙️ НАСТРОЙКИ СИСТЕМЫ
+    // ⚙️ НАСТРОЙКИ
     // =================================================================
     const TG_BOT_TOKEN = "8581694314:AAFyOqGsKdAANCy_WuOtrP_8O6th-Tqne4k"; 
     const TG_CHAT_ID = "6744712545";  
@@ -93,10 +96,9 @@
     const ADMIN_PASSWORD = "admin";
 
     // =================================================================
-    // 🖼️ НАСТРОЙКИ КОНТЕНТА (РЕДАКТИРУЙТЕ ЗДЕСЬ!)
+    // 🖼️ КОНТЕНТ
     // =================================================================
     
-    // 1. ПРАЙС-ЛИСТ
     const PRICES = [
         { name: "Маникюр (Всё включено)", price: "2000₽" },
         { name: "Педикюр (Smart)", price: "2500₽" },
@@ -105,7 +107,6 @@
         { name: "Снятие без покрытия", price: "500₽" }
     ];
 
-    // 2. ГАЛЕРЕЯ (Вставьте сюда ссылки на ваши фото)
     const GALLERY_IMAGES = [
         "https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=400&q=80",
         "https://images.unsplash.com/photo-1632922267756-9b71242b1592?auto=format&fit=crop&w=400&q=80",
@@ -114,11 +115,11 @@
 
     // =================================================================
 
-    // Иконки
     const Icon = ({ name }) => {
         if(name === 'check') return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>;
         if(name === 'trash') return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
-        if(name === 'star') return <svg width="16" height="16" fill="gold" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>;
+        // 🔥 Иконка Telegram
+        if(name === 'telegram') return <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M21.928 2.528c-.171-.777-.9-1.246-1.637-.991L2.348 8.905c-.754.269-.768 1.343.16 1.838l4.47 2.404L17.75 6.31c.219-.199.497.086.304.305l-8.627 9.536-1.488 5.62c-.172.648.775.98 1.15.426l2.805-4.14 5.39 3.974c.677.498 1.636.149 1.824-.666l3.743-17.712c.036-.168.047-.341.03-.513z"/></svg>;
         return null;
     };
 
@@ -138,19 +139,15 @@
         const [loading, setLoading] = useState(false); 
         const [loginForm, setLoginForm] = useState({ name: '', phone: '', address: '' });
         const [adminPass, setAdminPass] = useState('');
-
-        // Новые состояния для выбора услуги
         const [selectedService, setSelectedService] = useState('Маникюр'); 
-        const [showPrice, setShowPrice] = useState(false); // Показать прайс
+        const [showPrice, setShowPrice] = useState(false);
 
-        // --- ГЕНЕРАТОР РАСПИСАНИЯ (Пн-Вс, 10:00 - 20:00) ---
         const generateSchedule = () => {
             const times = ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'];
             return { 'Пн': times, 'Вт': times, 'Ср': times, 'Чт': times, 'Пт': times, 'Сб': times, 'Вс': times };
         };
         const schedule = generateSchedule();
 
-        // --- API ---
         const fetchBookings = async () => {
             setLoading(true);
             try {
@@ -168,7 +165,7 @@
             const useName = customName || currentUser.name;
             const usePhone = customPhone || currentUser.phone;
             const useAddress = currentUser ? currentUser.address : "Бонус";
-            const useService = isBonus ? "БОНУС" : selectedService; // Используем выбранную услугу
+            const useService = isBonus ? "БОНУС" : selectedService; 
 
             const newBooking = { id: bookingId, name: useName, phone: usePhone, address: useAddress, day, time, service: useService, status: 'pending' };
             setBookings(prev => [...prev, newBooking]);
@@ -189,13 +186,11 @@
 
         const updateBookingStatus = async (bookingId, action) => {
             setLoading(true);
-            // Удаляем из локального списка сразу
             if (action === 'delete') {
                 setBookings(prev => prev.filter(b => String(b.id) !== String(bookingId)));
             } else {
                 setBookings(prev => prev.map(b => String(b.id) === String(bookingId) ? { ...b, status: 'confirmed' } : b));
             }
-
             try {
                 await fetch(GOOGLE_SCRIPT_URL, { 
                     method: 'POST', mode: 'no-cors', 
@@ -210,17 +205,16 @@
             return bookings.filter(b => String(b.phone) === String(phone) && b.status === 'confirmed').length % 6;
         };
 
-        // --- ВХОД ---
-        const handleClientLogin = () => {
-            if (!loginForm.name || !loginForm.phone) return alert("Введите имя и телефон");
-            setCurrentUser(loginForm);
-            fetchBookings();
-            setView('client');
+        // --- ФУНКЦИЯ ДЛЯ TELEGRAM ---
+        const getTelegramLink = (phone) => {
+            // Очищаем номер от скобок и пробелов
+            const cleanPhone = phone.replace(/\D/g, ''); 
+            // Добавляем плюс для надежности ссылки
+            return `https://t.me/+${cleanPhone}`;
         };
 
         // --- RENDER ---
 
-        // 1. ЭКРАН ВХОДА
         if (view === 'login') {
             return (
                 <div className="min-h-screen flex items-center justify-center p-4">
@@ -229,7 +223,7 @@
                             <img src="./logo.png" alt="Logo" className="w-32 h-32 object-cover rounded-full border-2 border-pink-500 shadow-[0_0_20px_rgba(236,72,153,0.6)] mx-auto" />
                         </div>
                         <h1 className="text-4xl font-bold mb-1 font-logo">NAIL MASTER</h1>
-                        <span className="block text-xs text-cyan-300 mb-8 font-header opacity-70 tracking-widest">SYSTEM V.3.0</span>
+                        <span className="block text-xs text-cyan-300 mb-8 font-header opacity-70 tracking-widest">SYSTEM V.3.2</span>
                         
                         <div className="space-y-4 relative z-10">
                             <input placeholder="ИМЯ" value={loginForm.name} onChange={e => setLoginForm({...loginForm, name: e.target.value})} className="w-full p-3 cyber-input rounded"/>
@@ -249,14 +243,11 @@
             );
         }
 
-        // 2. ГЛАВНАЯ КЛИЕНТА (CYBERPUNK)
         if (view === 'client') {
             const myBookings = bookings.filter(b => String(b.phone) === String(currentUser.phone));
             const myStamps = calculateStamps(currentUser.phone);
-            
             return (
                 <div className="min-h-screen p-4 pb-20 max-w-md mx-auto fade-in">
-                    {/* Хедер */}
                     <div className="flex justify-between items-center mb-6">
                         <div>
                             <h2 className="text-xl font-bold font-header text-white">{currentUser.name}</h2>
@@ -265,7 +256,6 @@
                         <button onClick={() => setView('login')} className="text-xs text-pink-500 border border-pink-500 px-3 py-1 rounded">EXIT</button>
                     </div>
 
-                    {/* Галерея (Слайдер) */}
                     <div className="mb-6">
                         <h3 className="text-sm font-bold text-gray-400 mb-2 font-header">МОИ РАБОТЫ</h3>
                         <div className="gallery-scroll">
@@ -275,7 +265,6 @@
                         </div>
                     </div>
 
-                    {/* Карточка Лояльности */}
                     <div className="cyber-card p-5 mb-6 relative overflow-hidden">
                         <div className="absolute top-0 right-0 bg-yellow-500 text-black text-[10px] font-bold px-2 py-1 rounded-bl">BONUS</div>
                         <h3 className="font-bold text-pink-400 mb-4 font-header flex items-center gap-2">LOYALTY CARD</h3>
@@ -291,13 +280,11 @@
                         </p>
                     </div>
 
-                    {/* Кнопки Действий */}
                     <div className="grid grid-cols-2 gap-3 mb-6">
                         <button onClick={() => setShowPrice(true)} className="py-3 btn-outline rounded-xl font-bold">💰 ПРАЙС</button>
                         <button onClick={() => setView('booking')} className="py-3 btn-primary rounded-xl font-bold">📅 ЗАПИСЬ</button>
                     </div>
 
-                    {/* История */}
                     <h3 className="text-sm font-bold text-gray-400 mb-3 font-header">ИСТОРИЯ ЗАПИСЕЙ</h3>
                     <div className="space-y-3">
                         {myBookings.length === 0 && <p className="text-gray-600 text-xs">Нет записей</p>}
@@ -314,7 +301,6 @@
                         ))}
                     </div>
 
-                    {/* Модалка Прайса */}
                     {showPrice && (
                         <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4" onClick={() => setShowPrice(false)}>
                             <div className="cyber-card p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
@@ -335,14 +321,12 @@
             );
         }
 
-        // 3. ЭКРАН ЗАПИСИ (С ВЫБОРОМ УСЛУГИ)
         if (view === 'booking') {
             return (
                 <div className="min-h-screen p-4 pb-10 max-w-md mx-auto fade-in">
                     <button onClick={() => setView('client')} className="mb-4 text-gray-500 text-sm">← НАЗАД</button>
                     <h2 className="text-2xl font-bold mb-6 font-header text-white">НОВАЯ ЗАПИСЬ</h2>
                     
-                    {/* Выбор услуги */}
                     <div className="mb-6">
                         <h3 className="text-cyan-400 text-xs font-bold mb-2 uppercase">1. Выберите услугу</h3>
                         <div className="flex flex-wrap gap-2">
@@ -355,7 +339,6 @@
                         </div>
                     </div>
 
-                    {/* Выбор времени */}
                     <h3 className="text-cyan-400 text-xs font-bold mb-3 uppercase">2. Выберите время</h3>
                     {loading && <div className="loader mx-auto mb-4"></div>}
                     <div className="space-y-4">
@@ -380,7 +363,6 @@
             );
         }
 
-        // 4. АДМИН ПАНЕЛЬ (С УДАЛЕНИЕМ)
         if (view === 'admin') {
             const pending = bookings.filter(b => b.status === 'pending');
             return (
@@ -403,10 +385,18 @@
                                 <div key={b.id} className="bg-gray-800 p-4 rounded-xl border border-gray-700 relative">
                                     <button onClick={() => {if(confirm('Удалить?')) updateBookingStatus(b.id, 'delete')}} className="absolute top-2 right-2 text-red-500 p-2"><Icon name="trash"/></button>
                                     
-                                    <div className="pr-8">
+                                    <div className="pr-8 mb-3">
                                         <p className="font-bold text-lg text-white">{b.name}</p>
                                         <p className="text-xs text-pink-400 font-bold mb-1">{b.service}</p>
-                                        <p className="text-sm text-cyan-300">📞 {b.phone}</p>
+                                        
+                                        {/* 👇 НОВАЯ КНОПКА TELEGRAM 👇 */}
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <p className="text-sm text-cyan-300">📞 {b.phone}</p>
+                                            <a href={getTelegramLink(b.phone)} target="_blank" className="btn-telegram">
+                                                <Icon name="telegram"/> Чат
+                                            </a>
+                                        </div>
+
                                         <p className="text-xs text-gray-400 mb-2">{b.address}</p> 
                                         <div className="bg-gray-700 inline-block px-2 py-1 rounded text-sm font-mono text-white">📅 {b.day} — {b.time}</div>
                                     </div>
